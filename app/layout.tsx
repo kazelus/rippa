@@ -15,7 +15,6 @@ export const metadata: Metadata = {
   title: "Rippa Polska - Mini-koparki klasy premium",
   description:
     "Profesjonalne mini-koparki do zastosowań przemysłowych. Niezawodność, precyzja i serwis w Polsce.",
-  lang: "pl",
 };
 
 export default function RootLayout({
