@@ -129,7 +129,7 @@ export async function sendContactNotification(submission: any) {
     });
     const emails = (setting?.value || "")
       .split(",")
-      .map((s) => s.trim())
+      .map((s: string) => s.trim())
       .filter(Boolean);
     if (emails.length === 0) {
       console.warn(
