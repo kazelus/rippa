@@ -188,7 +188,7 @@ export async function PUT(
       const existingMap = new Map(
         existingImages.rows.map((r: any) => [r.url, r.id]),
       );
-      const incomingUrls = new Set(images.map((i) => i.url));
+      const incomingUrls = new Set(images.map((i: any) => i.url));
 
       // Delete images that are not in the incoming list
       for (const existing of existingImages.rows) {
