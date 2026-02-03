@@ -4,10 +4,10 @@ import { db } from "@/lib/db";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const result = await db.query(
       `SELECT id, name, slug, description, "createdAt", "updatedAt" 
@@ -32,7 +32,7 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
@@ -40,7 +40,7 @@ export async function PUT(
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
     const { name, description } = await req.json();
 
     // Verify ownership
@@ -89,7 +89,7 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
@@ -97,7 +97,7 @@ export async function DELETE(
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Verify ownership
     const categoryResult = await db.query(

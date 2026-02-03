@@ -5,11 +5,11 @@ import { initializeDatabase, pool } from "@/lib/db";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await initializeDatabase();
-    const id = params.id;
+    const { id } = await params;
     const result = await pool.query(
       'SELECT id, "categoryId", key, label, type, options, required, "order", "createdAt", "updatedAt" FROM "FeatureDefinition" WHERE id = $1',
       [id],
@@ -28,7 +28,7 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await initializeDatabase();
@@ -36,7 +36,7 @@ export async function PUT(
     if (!session?.user?.id)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const id = params.id;
+    const { id } = await params;
     const body = await req.json();
     const {
       categoryId = null,
@@ -76,7 +76,7 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await initializeDatabase();
@@ -84,7 +84,7 @@ export async function DELETE(
     if (!session?.user?.id)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const id = params.id;
+    const { id } = await params;
     await pool.query('DELETE FROM "FeatureDefinition" WHERE id = $1', [id]);
     // cascade will remove product values
     return NextResponse.json({ ok: true });
