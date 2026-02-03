@@ -67,8 +67,10 @@ export function ProductsClient() {
   };
 
   const filteredModels = models.filter((model) => {
-    const matchesCategory = !selectedCategory || model.categoryId === selectedCategory;
-    const matchesSearch = model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesCategory =
+      !selectedCategory || model.categoryId === selectedCategory;
+    const matchesSearch =
+      model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       model.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesBestseller = !showBestsellers || model.featured;
 
@@ -175,16 +177,28 @@ export function ProductsClient() {
 
                 <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
                   <div className="text-[#8b92a9]">
-                    <span className="text-white font-semibold">{model.power}</span> KM
+                    <span className="text-white font-semibold">
+                      {model.power}
+                    </span>{" "}
+                    KM
                   </div>
                   <div className="text-[#8b92a9]">
-                    <span className="text-white font-semibold">{model.depth}</span> mm
+                    <span className="text-white font-semibold">
+                      {model.depth}
+                    </span>{" "}
+                    mm
                   </div>
                   <div className="text-[#8b92a9]">
-                    <span className="text-white font-semibold">{model.weight}</span> kg
+                    <span className="text-white font-semibold">
+                      {model.weight}
+                    </span>{" "}
+                    kg
                   </div>
                   <div className="text-[#8b92a9]">
-                    <span className="text-white font-semibold">{model.bucket}</span> L
+                    <span className="text-white font-semibold">
+                      {model.bucket}
+                    </span>{" "}
+                    L
                   </div>
                 </div>
 
@@ -196,7 +210,7 @@ export function ProductsClient() {
                     </p>
                   </div>
                   <Link href={`/products/${model.id}`}>
-                    <Button variant="secondary">Zobacz więcej</Button>
+                    <Button variant="outline">Zobacz więcej</Button>
                   </Link>
                 </div>
               </div>
