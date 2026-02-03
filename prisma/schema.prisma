@@ -1,0 +1,237 @@
+// Kategorie produktów
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  admin       User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  adminId     String
+  // Feature definitions attached to this category
+  features    FeatureDefinition[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([adminId])
+}
+// Ustawienia globalne (np. numer WhatsApp)
+model Settings {
+  id      String @id @default(uuid())
+  key     String @unique
+  value   String
+}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Admin user model for NextAuth
+model Account {
+  id                 String  @id @default(uuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  password      String?
+  image         String?
+  role          String    @default("admin") // "superadmin" | "admin"
+  accounts      Account[]
+  sessions      Session[]
+  models        Model[]
+  categories    Category[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Mini-koparka model
+model Model {
+  id              String    @id @default(uuid())
+  name            String
+  heroDescription String?   @db.Text
+  description     String?   @db.Text
+  power       String    // e.g. "25 KM"
+  depth       String    // e.g. "2.8 m"
+  weight      String    // e.g. "2.2 t"
+  bucket      String    // e.g. "0.06 m³"
+  price       String    // e.g. "Od 65,000 PLN"
+  
+  // Images
+  images      Image[]
+  sections    Section[]
+  downloads   Download[]
+  
+  // Hero image selection
+  heroImageId String?
+  
+  // Featured/Bestseller
+  featured    Boolean   @default(false)
+  // Feature values for this product
+  featureValues ProductFeatureValue[]
+  // Contact submissions related to this product
+  contactSubmissions ContactSubmission[]
+  
+  // Admin info
+  admin       User      @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  adminId     String
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([adminId])
+}
+
+// Model images
+model Image {
+  id        String   @id @default(uuid())
+  url       String
+  alt       String?
+  model     Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  modelId   String
+  createdAt DateTime  @default(now())
+
+  @@index([modelId])
+}
+
+// Product sections
+model Section {
+  id      String @id @default(uuid())
+  title   String
+  text    String @db.Text
+  imageUrl String?
+  imageAlt String?
+  order   Int     @default(0)
+  model   Model   @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  modelId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([modelId])
+}
+
+// Product downloads (PDF, specs, etc.)
+model Download {
+  id        String   @id @default(cuid())
+  name      String   // Display name (e.g. "Specyfikacja techniczna")
+  url       String   // File path/URL
+  fileType  String   // e.g. "pdf", "doc", "xls"
+  fileSize  Int?     // File size in bytes
+  model     Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  modelId   String
+  createdAt DateTime @default(now())
+
+  @@index([modelId])
+}
+
+// Chat session (one per user conversation)
+model ChatSession {
+  id         String        @id @default(uuid())
+  userId     String?       // Optional: if user is logged in
+  phone      String?       // Optional: phone number if available
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  messages   ChatMessage[]
+}
+
+// Chat message (single message in a session)
+model ChatMessage {
+  id           String      @id @default(uuid())
+  session      ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId    String
+  sender       String      // 'user' | 'admin' | 'whatsapp'
+  content      String
+  delivered    Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+}
+
+// Feature definitions per category and stored product feature values
+model FeatureDefinition {
+  id         String   @id @default(uuid())
+  // Optional: if null, feature is global (applies to all categories)
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String?
+  key        String   // machine key, e.g. "max_depth"
+  label      String   // display label, e.g. "Głębokość"
+  type       String   // text | number | boolean | enum | date
+  options    Json?    // for enum: list of allowed values, or additional metadata
+  required   Boolean  @default(false)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  productValues ProductFeatureValue[]
+
+  @@index([categoryId])
+  @@unique([categoryId, key])
+}
+
+model ProductFeatureValue {
+  id         String    @id @default(uuid())
+  product    Model     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId  String
+  feature    FeatureDefinition @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  featureId  String
+  // store value as JSON to allow flexible types; renderer will interpret based on feature.type
+  value      Json?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([productId])
+  @@index([featureId])
+  @@unique([productId, featureId])
+}
+
+// Contact form submissions from public site (quote requests or general contact)
+model ContactSubmission {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  message   String   @db.Text
+  topic     String?
+  product   Model?   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+}
