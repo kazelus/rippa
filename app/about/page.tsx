@@ -204,7 +204,10 @@ export default function AboutPage() {
       <footer className="bg-[#0f1419]/80 border-t border-white/10 py-8 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-[#b0b0b0] text-sm">
           <div className="mb-2">
-            <Link href="/contact" className="text-white font-semibold hover:underline">
+            <Link
+              href="/contact"
+              className="text-white font-semibold hover:underline"
+            >
               Skontaktuj się z nami
             </Link>
           </div>

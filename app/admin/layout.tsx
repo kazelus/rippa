@@ -71,7 +71,7 @@ export default function AdminLayout({
             />
             <div>
               <p className="text-sm text-[#b0b0b0]">
-                Zalogowany jako: {session.user?.email}
+                Zalogowany jako: {session?.user?.email}
               </p>
             </div>
           </div>
