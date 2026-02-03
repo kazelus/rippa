@@ -106,12 +106,12 @@ export async function sendMail(opts: MailOptions) {
         subject: opts.subject,
         messageId: info?.messageId,
       });
-    } catch (e) {
+    } catch (e: any) {
       // ignore logging errors
     }
 
     return { ok: true, info };
-  } catch (err) {
+  } catch (err: any) {
     console.error("Error sending mail", {
       message: err?.message ?? err,
       code: err?.code,
@@ -147,7 +147,9 @@ export async function sendContactNotification(submission: any) {
       partnership: "Współpraca",
       other: "Inne",
     };
-    const topicLabel = submission.topic ? (topicMap[submission.topic] || submission.topic) : null;
+    const topicLabel = submission.topic
+      ? topicMap[submission.topic] || submission.topic
+      : null;
     const topicPart = topicLabel ? `Temat: ${topicLabel}\n` : "";
     const subject = `Nowe zgłoszenie kontaktowe — ${submission.name}${topicLabel ? ` — ${topicLabel}` : ""}`;
     const text = `Nowe zgłoszenie kontaktowe:\n\nImię: ${submission.name}\nEmail: ${submission.email}\nTelefon: ${submission.phone || "-"}\n${topicPart}${productPart}\nWiadomość:\n${submission.message}\n\nData: ${new Date(submission.createdAt).toLocaleString()}`;
@@ -164,7 +166,7 @@ export async function sendContactNotification(submission: any) {
       <p style=\"color:#6b7280;font-size:12px;\">Data: ${new Date(submission.createdAt).toLocaleString()}</p>`;
 
     return await sendMail({ to: emails, subject, text, html });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Error in sendContactNotification", err);
     return { ok: false, reason: err };
   }
