@@ -9,12 +9,14 @@ async function checkUsers() {
       password: true,
     },
   });
-  
+
   console.log("Users in production database:");
-  users.forEach(u => {
-    console.log(`- Email: ${u.email}, Name: ${u.name}, Has password: ${!!u.password}`);
+  users.forEach((u) => {
+    console.log(
+      `- Email: ${u.email}, Name: ${u.name}, Has password: ${!!u.password}`,
+    );
   });
-  
+
   await prisma.$disconnect();
 }
 
