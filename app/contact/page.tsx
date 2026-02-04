@@ -36,6 +36,7 @@ export default function ContactPage() {
           name,
           email,
           phone,
+          topic,
           message,
         }),
       });
@@ -179,7 +180,7 @@ export default function ContactPage() {
                 to możliwe.
               </p>
 
-              <form className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label
@@ -276,7 +277,6 @@ export default function ContactPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  onClick={() => {}}
                   className={`w-full ${submitting ? "opacity-60 pointer-events-none" : ""} bg-[#1b3caf] hover:bg-[#2850d4] text-white font-bold py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group`}
                 >
                   <span>
