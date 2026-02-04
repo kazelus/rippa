@@ -40,6 +40,11 @@ export default function EditModelPage({
   // Features for selected category and current values
   const [categoryFeatures, setCategoryFeatures] = useState<Array<any>>([]);
   const [featureValues, setFeatureValues] = useState<Record<string, any>>({});
+  // Parameters for selected category and current values
+  const [categoryParameters, setCategoryParameters] = useState<Array<any>>([]);
+  const [parameterValues, setParameterValues] = useState<Record<string, any>>(
+    {},
+  );
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [imageUploadError, setImageUploadError] = useState("");
@@ -101,6 +106,38 @@ export default function EditModelPage({
     fetchFeatures();
   }, [formData.categoryId]);
 
+  // Fetch parameters for current category
+  useEffect(() => {
+    const fetchParameters = async () => {
+      if (!formData.categoryId) {
+        setCategoryParameters([]);
+        setParameterValues({});
+        return;
+      }
+      try {
+        const res = await fetch(
+          `/api/admin/parameters?categoryId=${formData.categoryId}`,
+        );
+        if (!res.ok) return;
+        const defs = await res.json();
+        setCategoryParameters(defs || []);
+        // initialize values if not set
+        setParameterValues((prev) => {
+          const next = { ...prev };
+          (defs || []).forEach((p: any) => {
+            if (!(p.id in next)) {
+              next[p.id] = p.type === "boolean" ? false : null;
+            }
+          });
+          return next;
+        });
+      } catch (err) {
+        console.error("Error fetching parameters", err);
+      }
+    };
+    fetchParameters();
+  }, [formData.categoryId]);
+
   const fetchCategories = async () => {
     try {
       const response = await fetch("/api/categories");
@@ -153,6 +190,24 @@ export default function EditModelPage({
           options: f.options,
         }));
         setCategoryFeatures(defs);
+      }
+      // Load parameter values from API response (if present)
+      if (data.parameters && Array.isArray(data.parameters)) {
+        const vals: Record<string, any> = {};
+        data.parameters.forEach((p: any) => {
+          vals[p.id] = p.value ?? null;
+        });
+        setParameterValues(vals);
+        // set category parameters definitions too
+        const defs = data.parameters.map((p: any) => ({
+          id: p.id,
+          key: p.key,
+          label: p.label,
+          unit: p.unit,
+          type: p.type,
+          options: p.options,
+        }));
+        setCategoryParameters(defs);
       }
     } catch (err: any) {
       setError(err.message || "Failed to load model");
@@ -372,6 +427,10 @@ export default function EditModelPage({
           features: Object.keys(featureValues).map((k) => ({
             featureId: k,
             value: featureValues[k],
+          })),
+          parameters: Object.keys(parameterValues).map((k) => ({
+            parameterId: k,
+            value: parameterValues[k],
           })),
         }),
       });
