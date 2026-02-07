@@ -615,9 +615,7 @@ export default function AboutPage() {
                   <h3 className="text-xl font-bold text-white mb-3">
                     {value.title}
                   </h3>
-                  <p className="text-[#b0b0b0] leading-relaxed">
-                    {value.desc}
-                  </p>
+                  <p className="text-[#b0b0b0] leading-relaxed">{value.desc}</p>
                 </div>
               );
             })}

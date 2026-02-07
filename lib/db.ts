@@ -144,6 +144,9 @@ export async function initializeDatabase() {
     // Add quickSpec columns to ParameterDefinition if they don't exist
     try {
       await db.query(
+        `ALTER TABLE "ParameterDefinition" ADD COLUMN IF NOT EXISTS "variantOptions" JSONB`,
+      );
+      await db.query(
         `ALTER TABLE "ParameterDefinition" ADD COLUMN IF NOT EXISTS "isQuickSpec" BOOLEAN DEFAULT false`,
       );
       await db.query(
