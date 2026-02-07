@@ -10,16 +10,16 @@ async function checkSMTP() {
     "smtp_from",
     "contact_emails",
   ];
-  
+
   const settings = await prisma.settings.findMany({
     where: { key: { in: keys } },
   });
-  
+
   console.log("Current SMTP settings:");
-  settings.forEach(s => {
+  settings.forEach((s) => {
     console.log(`  ${s.key}: ${s.value}`);
   });
-  
+
   await prisma.$disconnect();
 }
 

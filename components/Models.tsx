@@ -9,13 +9,19 @@ interface Model {
   id: string;
   name: string;
   description: string;
-  power: number;
-  depth: number;
-  weight: number;
-  bucket: number;
+  power?: number;
+  depth?: number;
+  weight?: number;
+  bucket?: number;
   price: number;
   featured: boolean;
   images: Array<{ id: string; url: string; alt: string }>;
+  quickSpecs?: Array<{
+    label: string;
+    value: any;
+    unit: string;
+    paramLabel: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -132,33 +138,42 @@ export const Models: React.FC = () => {
                         {model.description}
                       </p>
 
-                      {/* Specs Compact Grid */}
-                      <div className="grid grid-cols-3 gap-2 mb-6 mt-auto">
-                        <div className="bg-[#0f1419]/50 p-3 rounded-xl text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                          <div className="text-[10px] uppercase tracking-wider text-[#6b7280] mb-1 font-bold">
-                            Moc
+                      {/* Specs Compact Grid - Dynamic Quick Specs */}
+                      {(() => {
+                        const specs =
+                          model.quickSpecs && model.quickSpecs.length > 0
+                            ? model.quickSpecs.slice(0, 3)
+                            : null;
+                        if (!specs) return null;
+                        return (
+                          <div
+                            className={`grid grid-cols-${Math.min(specs.length, 3)} gap-2 mb-6 mt-auto`}
+                          >
+                            {specs.map((qs, i) => {
+                              let displayVal = qs.value;
+                              if (typeof displayVal === "string") {
+                                try {
+                                  displayVal = JSON.parse(displayVal);
+                                } catch {}
+                              }
+                              return (
+                                <div
+                                  key={i}
+                                  className="bg-[#0f1419]/50 p-3 rounded-xl text-center border border-white/5 group-hover:border-white/10 transition-colors"
+                                >
+                                  <div className="text-[10px] uppercase tracking-wider text-[#6b7280] mb-1 font-bold">
+                                    {qs.label}
+                                  </div>
+                                  <div className="text-sm font-bold text-white group-hover:text-[#1b3caf] transition-colors">
+                                    {displayVal}
+                                    {qs.unit ? ` ${qs.unit}` : ""}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                          <div className="text-sm font-bold text-white group-hover:text-[#1b3caf] transition-colors">
-                            {model.power} KM
-                          </div>
-                        </div>
-                        <div className="bg-[#0f1419]/50 p-3 rounded-xl text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                          <div className="text-[10px] uppercase tracking-wider text-[#6b7280] mb-1 font-bold">
-                            Waga
-                          </div>
-                          <div className="text-sm font-bold text-white group-hover:text-[#1b3caf] transition-colors">
-                            {model.weight} t
-                          </div>
-                        </div>
-                        <div className="bg-[#0f1419]/50 p-3 rounded-xl text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                          <div className="text-[10px] uppercase tracking-wider text-[#6b7280] mb-1 font-bold">
-                            Kopanie
-                          </div>
-                          <div className="text-sm font-bold text-white group-hover:text-[#1b3caf] transition-colors">
-                            {model.depth} m
-                          </div>
-                        </div>
-                      </div>
+                        );
+                      })()}
 
                       <div className="flex items-center justify-between pt-4 border-t border-white/10">
                         <div className="flex flex-col">

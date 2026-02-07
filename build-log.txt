@@ -1,0 +1,87 @@
+﻿Ôľ▓ Next.js 16.1.4 (Turbopack)
+- Environments: .env.local, .env
+- Experiments (use with caution):
+  ┬Ě proxyClientMaxBodySize: 52428800
+
+npx : ÔÜá The "middleware" file convention is deprecated. Please use "proxy" in
+stead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+At line:1 char:1
++ npx next build 2>&1 | Out-File -FilePath "build-log.txt" -Encoding ut ...
++ ~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ÔÜá The "middle...leware-to-proxy 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  Creating an optimized production build ...
+Ôťô Compiled successfully in 3.7s
+  Running TypeScript ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/41) ...
+  Generating static pages using 15 workers (10/41) 
+  Generating static pages using 15 workers (20/41) 
+  Generating static pages using 15 workers (30/41) 
+Ôťô Generating static pages using 15 workers (41/41) in 659.8ms
+  Finalizing page optimization ...
+
+Route (app)
+Ôöî ÔŚő /
+Ôöť ÔŚő /_not-found
+Ôöť ÔŚő /about
+Ôöť ÔŚő /admin
+Ôöť ÔŚő /admin/accessories
+Ôöť Ăĺ /admin/accessories/[id]/edit
+Ôöť ÔŚő /admin/categories
+Ôöť ÔŚő /admin/chat
+Ôöť ÔŚő /admin/contacts
+Ôöť ÔŚő /admin/dashboard
+Ôöť ÔŚő /admin/features
+Ôöť Ăĺ /admin/features/[id]/edit
+Ôöť ÔŚő /admin/models
+Ôöť Ăĺ /admin/models/[id]/edit
+Ôöť ÔŚő /admin/models/new
+Ôöť ÔŚő /admin/parameters
+Ôöť Ăĺ /admin/parameters/[id]/edit
+Ôöť ÔŚő /admin/settings
+Ôöť ÔŚő /admin/settings/smtp
+Ôöť ÔŚő /admin/users
+Ôöť Ăĺ /api/accessories
+Ôöť Ăĺ /api/admin/accessories
+Ôöť Ăĺ /api/admin/accessories/[id]
+Ôöť Ăĺ /api/admin/chat
+Ôöť Ăĺ /api/admin/chat/messages
+Ôöť Ăĺ /api/admin/contacts
+Ôöť Ăĺ /api/admin/features
+Ôöť Ăĺ /api/admin/features/[id]
+Ôöť Ăĺ /api/admin/models/[id]/variants
+Ôöť Ăĺ /api/admin/parameters
+Ôöť Ăĺ /api/admin/parameters/[id]
+Ôöť Ăĺ /api/admin/parameters/groups
+Ôöť Ăĺ /api/admin/section-templates
+Ôöť Ăĺ /api/admin/section-templates/[id]
+Ôöť Ăĺ /api/admin/settings
+Ôöť Ăĺ /api/admin/settings/contact
+Ôöť Ăĺ /api/admin/settings/smtp
+Ôöť Ăĺ /api/admin/users
+Ôöť Ăĺ /api/admin/users/[id]
+Ôöť Ăĺ /api/auth/[...nextauth]
+Ôöť Ăĺ /api/auth/register
+Ôöť Ăĺ /api/categories
+Ôöť Ăĺ /api/categories/[id]
+Ôöť Ăĺ /api/chat
+Ôöť Ăĺ /api/downloads
+Ôöť Ăĺ /api/health
+Ôöť Ăĺ /api/models
+Ôöť Ăĺ /api/models/[id]
+Ôöť Ăĺ /api/quote
+Ôöť Ăĺ /api/upload
+Ôöť ÔŚő /compare
+Ôöť ÔŚő /contact
+Ôöť ÔŚő /products
+Ôöö Ăĺ /products/[id]
+
+
+Ăĺ Proxy (Middleware)
+
+ÔŚő  (Static)   prerendered as static content
+Ăĺ  (Dynamic)  server-rendered on demand
+

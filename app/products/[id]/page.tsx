@@ -19,6 +19,7 @@ import {
   Clock,
   Download as DownloadIcon,
   FileText,
+  Package,
 } from "lucide-react";
 import ChatWidget from "@/components/ChatWidget";
 
@@ -33,10 +34,10 @@ interface Model {
   name: string;
   description: string;
   heroDescription?: string; // New field
-  power: number;
-  depth: number;
-  weight: number;
-  bucket: number;
+  power?: number;
+  depth?: number;
+  weight?: number;
+  bucket?: number;
   price: number;
   featured: boolean;
   category?: { id: string; name: string; slug: string };
@@ -56,6 +57,42 @@ interface Model {
     type: string;
     options?: any;
     value: any;
+    affectsPrice?: boolean;
+    priceModifier?: number | null;
+    priceModifierType?: string;
+    isVariant?: boolean;
+    variantOptions?: Array<{ name: string; priceModifier: number }> | null;
+  }>;
+  parameters?: Array<{
+    id: string;
+    key: string;
+    label: string;
+    type: string;
+    unit?: string;
+    group?: string;
+    options?: any;
+    value: any;
+    affectsPrice?: boolean;
+    priceModifier?: number | null;
+    priceModifierType?: string;
+    isVariant?: boolean;
+    variantOptions?: Array<{ name: string; priceModifier: number }> | null;
+    isQuickSpec?: boolean;
+    quickSpecOrder?: number;
+    quickSpecLabel?: string | null;
+  }>;
+  variantGroups?: Array<{
+    id: string;
+    name: string;
+    order: number;
+    options: Array<{
+      id: string;
+      name: string;
+      priceModifier: number;
+      isDefault: boolean;
+      images?: Array<{ url: string; alt: string; isHero?: boolean }> | null;
+      parameterOverrides?: Record<string, any> | null;
+    }>;
   }>;
 }
 
@@ -72,11 +109,143 @@ export default function ProductDetailsPage({
   const [scrollY, setScrollY] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
+  const [quoteSubmitting, setQuoteSubmitting] = useState(false);
   const [quoteName, setQuoteName] = useState("");
   const [quoteEmail, setQuoteEmail] = useState("");
   const [quotePhone, setQuotePhone] = useState("");
   const [quoteMessage, setQuoteMessage] = useState("");
   const [isMobile, setIsMobile] = useState(false);
+  const [activeParamTab, setActiveParamTab] = useState(0);
+  const [accessories, setAccessories] = useState<
+    Array<{
+      id: string;
+      name: string;
+      description: string | null;
+      price: number | null;
+      imageUrl: string | null;
+    }>
+  >([]);
+  // Model-level variant selections: { groupId: optionId }
+  const [selectedVariants, setSelectedVariants] = useState<
+    Record<string, string>
+  >({});
+
+  // Format price nicely: 150 000 PLN (with non-breaking spaces)
+  const formatPrice = (value: number) => {
+    return Math.round(value).toLocaleString("pl-PL").replace(/,/g, " ");
+  };
+
+  // Calculate total price from model-level variant groups
+  const calculateTotalPrice = () => {
+    if (!model) return 0;
+    let total = Number(model.price) || 0;
+
+    if (model.variantGroups) {
+      model.variantGroups.forEach((group) => {
+        const selectedOptId = selectedVariants[group.id];
+        if (selectedOptId) {
+          const opt = group.options.find((o) => o.id === selectedOptId);
+          if (opt) {
+            total += Number(opt.priceModifier) || 0;
+          }
+        }
+      });
+    }
+
+    return total;
+  };
+
+  const totalPrice = model ? calculateTotalPrice() : 0;
+  const hasVariants =
+    model && model.variantGroups && model.variantGroups.length > 0;
+
+  const selectVariant = (groupId: string, optionId: string) => {
+    setSelectedVariants((prev) => ({ ...prev, [groupId]: optionId }));
+  };
+
+  // Get current effective images (swapped by variant selection)
+  const getEffectiveImages = () => {
+    if (!model) return [];
+    // Check if any selected variant has images - use the LAST one that has images
+    let variantImages: Array<{
+      url: string;
+      alt: string;
+      isHero?: boolean;
+    }> | null = null;
+    if (model.variantGroups) {
+      for (const group of model.variantGroups) {
+        const selectedOptId = selectedVariants[group.id];
+        if (selectedOptId) {
+          const opt = group.options.find((o) => o.id === selectedOptId);
+          if (opt?.images && opt.images.length > 0) {
+            variantImages = opt.images;
+          }
+        }
+      }
+    }
+    if (variantImages) return variantImages;
+    return model.images || [];
+  };
+
+  // Get effective hero image URL
+  const getEffectiveHeroUrl = () => {
+    const imgs = getEffectiveImages();
+    const heroImg = imgs.find((i: any) => i.isHero);
+    if (heroImg) return heroImg.url;
+    // Fallback to model heroImageId
+    if (model?.heroImageId) {
+      const heroFromModel = model.images?.find(
+        (i) => i.id === model.heroImageId,
+      );
+      if (heroFromModel) return heroFromModel.url;
+    }
+    return imgs[0]?.url || null;
+  };
+
+  // Get parameter overrides from selected variants
+  const getParameterOverrides = (): Record<string, any> => {
+    const overrides: Record<string, any> = {};
+    if (!model?.variantGroups) return overrides;
+    for (const group of model.variantGroups) {
+      const selectedOptId = selectedVariants[group.id];
+      if (selectedOptId) {
+        const opt = group.options.find((o) => o.id === selectedOptId);
+        if (opt?.parameterOverrides) {
+          Object.assign(overrides, opt.parameterOverrides);
+        }
+      }
+    }
+    return overrides;
+  };
+
+  // Get quick specs from parameters marked as isQuickSpec, with variant overrides applied
+  const getQuickSpecs = () => {
+    if (!model?.parameters) return [];
+    const overrides = getParameterOverrides();
+    return model.parameters
+      .filter((p) => p.isQuickSpec)
+      .sort((a, b) => (a.quickSpecOrder || 0) - (b.quickSpecOrder || 0))
+      .map((p) => {
+        const hasOverride = p.label in overrides;
+        const rawValue = hasOverride ? overrides[p.label] : p.value;
+        // Parse JSON-stored value
+        let displayValue = rawValue;
+        if (typeof rawValue === "string") {
+          try {
+            displayValue = JSON.parse(rawValue);
+          } catch {
+            displayValue = rawValue;
+          }
+        }
+        return {
+          label: p.quickSpecLabel || p.label,
+          value: displayValue,
+          unit: hasOverride ? "" : p.unit || "",
+          hasOverride,
+        };
+      })
+      .filter((qs) => qs.value != null && qs.value !== "");
+  };
 
   useEffect(() => {
     params.then((p) => setProductId(p.id));
@@ -156,7 +325,47 @@ export default function ProductDetailsPage({
 
   const handleSubmitQuote = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (quoteSubmitting) return;
     if (!quoteName || !quoteEmail || !quoteMessage) return;
+    setQuoteSubmitting(true);
+
+    // Build configuration object from current selections
+    const buildConfiguration = () => {
+      if (!model) return undefined;
+
+      const variants: Array<{
+        groupName: string;
+        optionName: string;
+        priceModifier?: number;
+      }> = [];
+      if (model.variantGroups) {
+        for (const group of model.variantGroups) {
+          const selectedOptId = selectedVariants[group.id];
+          if (selectedOptId) {
+            const opt = group.options.find((o: any) => o.id === selectedOptId);
+            if (opt) {
+              variants.push({
+                groupName: group.name,
+                optionName: opt.name,
+                priceModifier: Number(opt.priceModifier) || 0,
+              });
+            }
+          }
+        }
+      }
+
+      const quickSpecs = getQuickSpecs().map((qs) => ({
+        label: qs.label,
+        value: String(qs.value),
+        unit: qs.unit || undefined,
+      }));
+
+      return {
+        variants: variants.length > 0 ? variants : undefined,
+        quickSpecs: quickSpecs.length > 0 ? quickSpecs : undefined,
+        totalPrice: formatPrice(calculateTotalPrice()) + " PLN",
+      };
+    };
 
     try {
       const response = await fetch("/api/quote", {
@@ -169,10 +378,12 @@ export default function ProductDetailsPage({
           email: quoteEmail,
           phone: quotePhone,
           message: quoteMessage,
+          configuration: buildConfiguration(),
         }),
       });
 
       if (response.ok) {
+        setQuoteSubmitting(false);
         setQuoteModalOpen(false);
         setQuoteName("");
         setQuoteEmail("");
@@ -182,7 +393,7 @@ export default function ProductDetailsPage({
           new CustomEvent("rippa-toast", {
             detail: {
               message:
-                "Dziękujemy za zapytanie! Wkrótce się z Tobą skontaktujemy.",
+                "Dziękujemy za zapytanie! Potwierdzenie wysłaliśmy na Twój email.",
               type: "success",
             },
           }),
@@ -198,6 +409,8 @@ export default function ProductDetailsPage({
           },
         }),
       );
+    } finally {
+      setQuoteSubmitting(false);
     }
   };
 
@@ -210,6 +423,25 @@ export default function ProductDetailsPage({
       }
       const data = await response.json();
       setModel(data);
+
+      // Initialize default variant selections from model-level variant groups
+      const defaults: Record<string, string> = {};
+      if (data.variantGroups) {
+        data.variantGroups.forEach((group: any) => {
+          const defaultOpt = group.options.find((o: any) => o.isDefault);
+          if (defaultOpt) {
+            defaults[group.id] = defaultOpt.id;
+          } else if (group.options.length > 0) {
+            defaults[group.id] = group.options[0].id;
+          }
+        });
+      }
+      setSelectedVariants(defaults);
+
+      // Set accessories from model API response
+      if (data.accessories && Array.isArray(data.accessories)) {
+        setAccessories(data.accessories);
+      }
     } catch (error) {
       console.error("Error fetching model:", error);
     } finally {
@@ -245,14 +477,13 @@ export default function ProductDetailsPage({
     );
   }
 
-  // Hero image: always show heroImageId if set
-  const heroImageObj = model.heroImageId
-    ? model.images?.find((img) => img.id === model.heroImageId)
-    : null;
-  const heroImageUrl = heroImageObj ? heroImageObj.url : model.images?.[0]?.url;
+  // Hero image: use variant-aware hero
+  const heroImageUrl = getEffectiveHeroUrl();
 
-  // Gallery main image: use slider
-  const galleryImageUrl = model.images?.[selectedImageIndex]?.url;
+  // Gallery images: use variant-aware gallery
+  const effectiveImages = getEffectiveImages();
+  const galleryImageUrl =
+    effectiveImages[selectedImageIndex]?.url || effectiveImages[0]?.url;
 
   // Nowoczesny Hero z animacją: tylko zdjęcie w tle
   return (
@@ -261,9 +492,9 @@ export default function ProductDetailsPage({
 
       {/* Hero Section - Modern Full-Screen Design */}
       <section
-        className="relative bg-transparent overflow-hidden min-h-screen w-full flex items-center justify-center transition-opacity duration-500 pt-20"
+        className="relative bg-transparent min-h-screen w-full flex items-start justify-center transition-opacity duration-500 pt-20"
         style={{
-          opacity: Math.max(0, 1 - scrollY / (isMobile ? 500 : 200)),
+          opacity: Math.max(0, 1 - scrollY / (isMobile ? 500 : 600)),
         }}
       >
         <div className="relative w-full h-auto min-h-[calc(100vh-80px)] py-8 px-4 sm:px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-16">
@@ -293,16 +524,67 @@ export default function ProductDetailsPage({
             {/* Price */}
             <div>
               <p className="text-sm uppercase tracking-widest text-[#b0b0b0] mb-2">
-                Cena startowa
+                {hasVariants ? "Twoja konfiguracja" : "Cena startowa"}
               </p>
               <p className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf]">
-                Od{" "}
-                {model.price
-                  .toLocaleString("pl-PL")
-                  .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}{" "}
-                PLN
+                {hasVariants ? "" : "Od "}
+                {formatPrice(totalPrice)} PLN
               </p>
+              {hasVariants && totalPrice !== Number(model.price) && (
+                <p className="text-sm text-[#8b92a9] mt-1 line-through">
+                  Cena bazowa: {formatPrice(Number(model.price))} PLN
+                </p>
+              )}
             </div>
+
+            {/* Variant Configurator */}
+            {hasVariants && (
+              <div className="space-y-3 py-3">
+                {model.variantGroups!.map((group) => {
+                  const selectedOptId = selectedVariants[group.id];
+                  return (
+                    <div key={group.id} className="space-y-1.5">
+                      <p className="text-xs font-medium text-[#8b92a9] uppercase tracking-wider">
+                        {group.name}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {group.options.map((opt) => {
+                          const isSelected = selectedOptId === opt.id;
+                          const isBase = (Number(opt.priceModifier) || 0) === 0;
+                          return (
+                            <button
+                              key={opt.id}
+                              onClick={() => {
+                                selectVariant(group.id, opt.id);
+                                setSelectedImageIndex(0);
+                              }}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                                isSelected
+                                  ? "bg-[#1b3caf]/20 text-white border border-[#1b3caf]/60"
+                                  : "bg-white/5 text-[#9ca3b8] border border-white/10 hover:border-white/20 hover:text-white"
+                              }`}
+                            >
+                              <span>{opt.name}</span>
+                              {!isBase && (
+                                <span
+                                  className={`${
+                                    isSelected
+                                      ? "text-[#0f9fdf]"
+                                      : "text-[#6b7280]"
+                                  }`}
+                                >
+                                  +{formatPrice(Number(opt.priceModifier))}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Description - Clean text without background */}
             <p className="text-lg sm:text-xl text-[#d0d8e6] leading-relaxed font-light max-w-lg">
@@ -310,34 +592,33 @@ export default function ProductDetailsPage({
             </p>
 
             {/* Quick Specs */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-4 border-t border-b border-white/10">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-[#8b92a9] mb-1">
-                  Moc
-                </p>
-                <p className="text-lg font-bold text-white">{model.power} KM</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-[#8b92a9] mb-1">
-                  Głębokość
-                </p>
-                <p className="text-lg font-bold text-white">{model.depth} m</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-[#8b92a9] mb-1">
-                  Waga
-                </p>
-                <p className="text-lg font-bold text-white">{model.weight} t</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-[#8b92a9] mb-1">
-                  Pojemność
-                </p>
-                <p className="text-lg font-bold text-white">
-                  {model.bucket} m³
-                </p>
-              </div>
-            </div>
+            {(() => {
+              const quickSpecs = getQuickSpecs();
+              if (quickSpecs.length === 0) return null;
+              const cols =
+                quickSpecs.length <= 3
+                  ? `grid-cols-${quickSpecs.length}`
+                  : "grid-cols-2 sm:grid-cols-4";
+              return (
+                <div
+                  className={`grid ${cols} gap-3 py-4 border-t border-b border-white/10`}
+                >
+                  {quickSpecs.map((qs, i) => (
+                    <div key={i}>
+                      <p className="text-xs uppercase tracking-wide text-[#8b92a9] mb-1">
+                        {qs.label}
+                      </p>
+                      <p
+                        className={`text-lg font-bold ${qs.hasOverride ? "text-[#0f9fdf]" : "text-white"}`}
+                      >
+                        {qs.value}
+                        {qs.unit ? ` ${qs.unit}` : ""}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
@@ -383,12 +664,12 @@ export default function ProductDetailsPage({
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0f1419]/40 via-transparent to-transparent pointer-events-none" />
 
                     {/* Left Arrow */}
-                    {model.images && model.images.length > 1 && (
+                    {effectiveImages.length > 1 && (
                       <button
                         onClick={() =>
                           setSelectedImageIndex(
                             selectedImageIndex === 0
-                              ? model.images!.length - 1
+                              ? effectiveImages.length - 1
                               : selectedImageIndex - 1,
                           )
                         }
@@ -399,11 +680,11 @@ export default function ProductDetailsPage({
                     )}
 
                     {/* Right Arrow */}
-                    {model.images && model.images.length > 1 && (
+                    {effectiveImages.length > 1 && (
                       <button
                         onClick={() =>
                           setSelectedImageIndex(
-                            selectedImageIndex === model.images!.length - 1
+                            selectedImageIndex === effectiveImages.length - 1
                               ? 0
                               : selectedImageIndex + 1,
                           )
@@ -423,9 +704,9 @@ export default function ProductDetailsPage({
                     </button>
 
                     {/* Image counter */}
-                    {model.images && model.images.length > 1 && (
+                    {effectiveImages.length > 1 && (
                       <div className="absolute bottom-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm border border-white/20">
-                        {selectedImageIndex + 1} / {model.images.length}
+                        {selectedImageIndex + 1} / {effectiveImages.length}
                       </div>
                     )}
                   </div>
@@ -437,11 +718,11 @@ export default function ProductDetailsPage({
               </div>
 
               {/* Thumbnails */}
-              {model.images && model.images.length > 1 && (
+              {effectiveImages.length > 1 && (
                 <div className="flex gap-3 overflow-x-auto pb-2">
-                  {model.images.map((image, index) => (
+                  {effectiveImages.map((image: any, index: number) => (
                     <button
-                      key={image.id}
+                      key={image.id || index}
                       onClick={() => setSelectedImageIndex(index)}
                       className={`flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 transition duration-300 ${
                         selectedImageIndex === index
@@ -475,51 +756,90 @@ export default function ProductDetailsPage({
                 {/* Price Highlight */}
                 <div className="mb-6">
                   <p className="text-sm uppercase tracking-widest text-[#8b92a9] mb-2">
-                    Cena od
+                    {hasVariants ? "Twoja konfiguracja" : "Cena od"}
                   </p>
                   <p className="text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf]">
-                    {model.price
-                      .toLocaleString("pl-PL")
-                      .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}{" "}
-                    PLN
+                    {formatPrice(totalPrice)} PLN
                   </p>
+                  {hasVariants && totalPrice !== Number(model.price) && (
+                    <p className="text-xs text-[#8b92a9] mt-1 line-through">
+                      Cena bazowa: {formatPrice(Number(model.price))} PLN
+                    </p>
+                  )}
                 </div>
 
+                {/* Sidebar Variant Configurator */}
+                {hasVariants && (
+                  <div className="mb-6 pb-6 border-b border-white/10 space-y-3">
+                    {model.variantGroups!.map((group) => {
+                      const selectedOptId = selectedVariants[group.id];
+                      return (
+                        <div key={group.id} className="space-y-1.5">
+                          <p className="text-xs font-medium text-[#8b92a9] uppercase tracking-wider">
+                            {group.name}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {group.options.map((opt) => {
+                              const isSelected = selectedOptId === opt.id;
+                              const isBase =
+                                (Number(opt.priceModifier) || 0) === 0;
+                              return (
+                                <button
+                                  key={opt.id}
+                                  onClick={() => {
+                                    selectVariant(group.id, opt.id);
+                                    setSelectedImageIndex(0);
+                                  }}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                                    isSelected
+                                      ? "bg-[#1b3caf]/20 text-white border border-[#1b3caf]/60"
+                                      : "bg-white/5 text-[#9ca3b8] border border-white/10 hover:border-white/20 hover:text-white"
+                                  }`}
+                                >
+                                  <span>{opt.name}</span>
+                                  {!isBase && (
+                                    <span
+                                      className={`${
+                                        isSelected
+                                          ? "text-[#0f9fdf]"
+                                          : "text-[#6b7280]"
+                                      }`}
+                                    >
+                                      +{formatPrice(Number(opt.priceModifier))}
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {/* Quick Specs */}
-                <div className="grid grid-cols-2 gap-3 mb-6 py-6 border-t border-b border-white/10">
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-[#8b92a9] mb-1">
-                      Moc
-                    </p>
-                    <p className="text-lg font-bold text-white">
-                      {model.power} KM
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-[#8b92a9] mb-1">
-                      Głębokość
-                    </p>
-                    <p className="text-lg font-bold text-white">
-                      {model.depth} m
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-[#8b92a9] mb-1">
-                      Waga
-                    </p>
-                    <p className="text-lg font-bold text-white">
-                      {model.weight} t
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-[#8b92a9] mb-1">
-                      Pojemność
-                    </p>
-                    <p className="text-lg font-bold text-white">
-                      {model.bucket} m³
-                    </p>
-                  </div>
-                </div>
+                {(() => {
+                  const quickSpecs = getQuickSpecs();
+                  if (quickSpecs.length === 0) return null;
+                  return (
+                    <div className="grid grid-cols-2 gap-3 mb-6 py-6 border-t border-b border-white/10">
+                      {quickSpecs.map((qs, i) => (
+                        <div key={i}>
+                          <p className="text-xs uppercase tracking-wide text-[#8b92a9] mb-1">
+                            {qs.label}
+                          </p>
+                          <p
+                            className={`text-lg font-bold ${qs.hasOverride ? "text-[#0f9fdf]" : "text-white"}`}
+                          >
+                            {qs.value}
+                            {qs.unit ? ` ${qs.unit}` : ""}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
 
                 {/* CTA Buttons */}
                 <div className="flex flex-col gap-2">
@@ -578,68 +898,180 @@ export default function ProductDetailsPage({
           </section>
         )}
 
-        {/* Specs Section */}
-        <section className="py-16">
+        {/* Specs Section with Tabs */}
+        <section className="py-20 border-t border-white/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl font-bold text-white mb-12">
+            <h2 className="text-4xl font-bold text-white mb-12 text-center bg-gradient-to-r from-[#1b3caf] via-white to-[#0f9fdf] bg-clip-text text-transparent">
               Specyfikacja techniczna
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-white/5 p-8 rounded-xl border border-white/10">
-                <div className="flex items-center gap-3 mb-4">
-                  <TrendingUp className="w-6 h-6 text-[#1b3caf]" />
-                  <h3 className="text-xl font-bold text-white">
-                    Parametry silnika
-                  </h3>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-[#b0b0b0]">Moc</span>
-                    <span className="text-white font-semibold">
-                      {model.power} KM
-                    </span>
-                  </div>
-                  <div className="h-px bg-white/10"></div>
-                  <div className="flex justify-between">
-                    <span className="text-[#b0b0b0]">Typ</span>
-                    <span className="text-white font-semibold">
-                      Kubota V2203
-                    </span>
-                  </div>
-                </div>
-              </div>
 
-              <div className="bg-white/5 p-8 rounded-xl border border-white/10">
-                <div className="flex items-center gap-3 mb-4">
-                  <MapPin className="w-6 h-6 text-[#1b3caf]" />
-                  <h3 className="text-xl font-bold text-white">
-                    Wymiary i waga
-                  </h3>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-[#b0b0b0]">Głębokość kopania</span>
-                    <span className="text-white font-semibold">
-                      {model.depth} m
-                    </span>
-                  </div>
-                  <div className="h-px bg-white/10"></div>
-                  <div className="flex justify-between">
-                    <span className="text-[#b0b0b0]">Waga</span>
-                    <span className="text-white font-semibold">
-                      {model.weight} ton
-                    </span>
-                  </div>
-                  <div className="h-px bg-white/10"></div>
-                  <div className="flex justify-between">
-                    <span className="text-[#b0b0b0]">Pojemność łyżki</span>
-                    <span className="text-white font-semibold">
-                      {model.bucket} m³
-                    </span>
-                  </div>
-                </div>
+            {model.parameters && model.parameters.length > 0 ? (
+              (() => {
+                // Group parameters by 'group' field
+                const grouped = model.parameters.reduce((acc: any, p: any) => {
+                  const groupName = p.group || "Ogólne";
+                  if (!acc[groupName]) acc[groupName] = [];
+                  acc[groupName].push(p);
+                  return acc;
+                }, {});
+
+                const groupNames = Object.keys(grouped);
+
+                // SVG Icons for parameter groups
+                const getGroupIcon = (groupName: string) => {
+                  const name = groupName.toLowerCase();
+                  if (name.includes("silnik") || name.includes("engine")) {
+                    return (
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 10V3L4 14h7v7l9-11h-7z"
+                        />
+                      </svg>
+                    );
+                  }
+                  if (name.includes("wymiar") || name.includes("dimension")) {
+                    return (
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                        />
+                      </svg>
+                    );
+                  }
+                  if (name.includes("hydraul") || name.includes("hydro")) {
+                    return (
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                        />
+                      </svg>
+                    );
+                  }
+                  // Default icon
+                  return (
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                      />
+                    </svg>
+                  );
+                };
+
+                return (
+                  <>
+                    {/* Tabs Navigation */}
+                    <div className="flex justify-center mb-8">
+                      <div className="inline-flex flex-wrap gap-2 bg-white/5 p-2 rounded-xl border border-white/10">
+                        {groupNames.map((groupName, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setActiveParamTab(idx)}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+                              activeParamTab === idx
+                                ? "bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white shadow-lg shadow-blue-500/30"
+                                : "text-[#b0b0b0] hover:text-white hover:bg-white/5"
+                            }`}
+                          >
+                            {getGroupIcon(groupName)}
+                            {groupName}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Tab Content */}
+                    {(() => {
+                      const overrides = getParameterOverrides();
+                      return groupNames.map(
+                        (groupName, idx) =>
+                          activeParamTab === idx && (
+                            <div
+                              key={idx}
+                              className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn"
+                            >
+                              {grouped[groupName].map((param: any) => {
+                                const overrideValue = overrides[param.label];
+                                const hasOverride = overrideValue !== undefined;
+                                const displayValue = hasOverride
+                                  ? overrideValue
+                                  : param.type === "boolean"
+                                    ? param.value
+                                      ? "Tak"
+                                      : "Nie"
+                                    : param.value;
+
+                                return (
+                                  <div
+                                    key={param.id}
+                                    className={`bg-white/5 p-6 rounded-xl border transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 ${
+                                      hasOverride
+                                        ? "border-[#0f9fdf]/40 bg-[#0f9fdf]/5"
+                                        : "border-white/10 hover:border-[#1b3caf]/50"
+                                    }`}
+                                  >
+                                    <div className="flex justify-between items-start">
+                                      <span className="text-[#b0b0b0] text-sm font-medium">
+                                        {param.label}
+                                      </span>
+                                      <span
+                                        className={`font-bold text-lg ${hasOverride ? "text-[#0f9fdf]" : "text-white"}`}
+                                      >
+                                        {displayValue}
+                                        {!hasOverride &&
+                                          param.unit &&
+                                          ` ${param.unit}`}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ),
+                      );
+                    })()}
+                  </>
+                );
+              })()
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-[#6b7280] text-lg">
+                  Parametry techniczne nie zostały jeszcze zdefiniowane dla tego
+                  modelu.
+                </p>
               </div>
-            </div>
+            )}
           </div>
         </section>
 
@@ -661,10 +1093,17 @@ export default function ProductDetailsPage({
                           {section.title}
                         </h3>
 
-                        {/* Description - clean text */}
-                        <p className="text-[#d0d8e6] text-lg md:text-xl leading-relaxed whitespace-pre-wrap font-light">
-                          {section.text}
-                        </p>
+                        {/* Description - rich text or plain text */}
+                        {section.text.includes("<") ? (
+                          <div
+                            className="text-[#d0d8e6] text-lg md:text-xl leading-relaxed font-light prose-section"
+                            dangerouslySetInnerHTML={{ __html: section.text }}
+                          />
+                        ) : (
+                          <p className="text-[#d0d8e6] text-lg md:text-xl leading-relaxed whitespace-pre-wrap font-light">
+                            {section.text}
+                          </p>
+                        )}
                       </div>
 
                       {/* Image - Right for even, Left for odd - With Slide Effect */}
@@ -690,20 +1129,83 @@ export default function ProductDetailsPage({
                       </div>
                     </div>
                   ) : (
-                    <div className="max-w-3xl">
-                      {/* Title Only */}
+                    <div className="max-w-4xl mx-auto text-center">
+                      {/* Decorative accent line */}
+                      <div className="flex items-center justify-center gap-4 mb-8">
+                        <div className="h-px w-16 bg-gradient-to-r from-transparent to-[#1b3caf]/60" />
+                        <div className="w-2 h-2 rounded-full bg-[#1b3caf]" />
+                        <div className="h-px w-16 bg-gradient-to-l from-transparent to-[#1b3caf]/60" />
+                      </div>
+
+                      {/* Title - centered */}
                       <h3 className="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight">
                         {section.title}
                       </h3>
 
-                      {/* Description - clean text */}
-                      <p className="text-[#d0d8e6] text-lg md:text-xl leading-relaxed whitespace-pre-wrap font-light">
-                        {section.text}
-                      </p>
+                      {/* Description - rich text or plain text, centered */}
+                      {section.text.includes("<") ? (
+                        <div
+                          className="text-[#d0d8e6] text-lg md:text-xl leading-relaxed font-light prose-section mx-auto max-w-3xl"
+                          dangerouslySetInnerHTML={{ __html: section.text }}
+                        />
+                      ) : (
+                        <p className="text-[#d0d8e6] text-lg md:text-xl leading-relaxed whitespace-pre-wrap font-light mx-auto max-w-3xl">
+                          {section.text}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* ===== PRICE SUMMARY (when variants exist) ===== */}
+        {hasVariants && totalPrice !== Number(model.price) && (
+          <section className="py-8 border-t border-white/10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="bg-gradient-to-br from-white/10 to-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm max-w-md mx-auto">
+                <h3 className="text-lg font-bold text-white mb-4">
+                  Podsumowanie konfiguracji
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#8b92a9]">Cena bazowa</span>
+                    <span className="text-white">
+                      {formatPrice(Number(model.price))} PLN
+                    </span>
+                  </div>
+                  {model.variantGroups?.map((group) => {
+                    const selectedOptId = selectedVariants[group.id];
+                    const opt = group.options.find(
+                      (o) => o.id === selectedOptId,
+                    );
+                    if (!opt || (Number(opt.priceModifier) || 0) === 0)
+                      return null;
+                    return (
+                      <div
+                        key={group.id}
+                        className="flex justify-between text-sm"
+                      >
+                        <span className="text-[#8b92a9]">{opt.name}</span>
+                        <span className="text-amber-400">
+                          + {formatPrice(Number(opt.priceModifier))} PLN
+                        </span>
+                      </div>
+                    );
+                  })}
+                  <div className="h-px bg-white/10 my-2" />
+                  <div className="flex justify-between items-end">
+                    <span className="text-white font-semibold text-lg">
+                      Razem
+                    </span>
+                    <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf]">
+                      {formatPrice(totalPrice)} PLN
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
         )}
@@ -806,6 +1308,61 @@ export default function ProductDetailsPage({
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Accessories Section */}
+        {accessories.length > 0 && (
+          <section className="py-16 border-t border-white/10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h2 className="text-3xl font-bold text-white mb-2">
+                Polecane produkty
+              </h2>
+              <p className="text-[#b0b0b0] mb-8">
+                Sprawdź kompatybilne produkty
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {accessories.map((acc) => (
+                  <Link
+                    key={acc.id}
+                    href={`/products/${acc.id}`}
+                    className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-[#1b3caf]/40 transition-all duration-300 group block"
+                  >
+                    <div className="aspect-square bg-white/5 relative overflow-hidden">
+                      {acc.imageUrl ? (
+                        <img
+                          src={acc.imageUrl}
+                          alt={acc.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Package className="w-12 h-12 text-[#6b7280]" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-white font-semibold text-lg mb-1">
+                        {acc.name}
+                      </h3>
+                      {acc.description && (
+                        <p className="text-[#b0b0b0] text-sm line-clamp-2 mb-3">
+                          {acc.description}
+                        </p>
+                      )}
+                      {acc.price && (
+                        <p className="text-[#1b3caf] font-bold text-lg">
+                          {formatPrice(Number(acc.price))} PLN
+                        </p>
+                      )}
+                      <span className="text-[#0f9fdf] text-sm mt-2 inline-block group-hover:underline">
+                        Zobacz szczegóły →
+                      </span>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
           </section>
@@ -1109,9 +1666,10 @@ export default function ProductDetailsPage({
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white font-bold py-3 rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 transform hover:scale-105"
+                disabled={quoteSubmitting}
+                className={`w-full bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white font-bold py-3 rounded-lg transition-all duration-300 ${quoteSubmitting ? "opacity-60 cursor-not-allowed" : "hover:shadow-lg hover:shadow-blue-500/50 transform hover:scale-105"}`}
               >
-                Wyślij zapytanie
+                {quoteSubmitting ? "Wysyłanie..." : "Wyślij zapytanie"}
               </button>
 
               <p className="text-xs text-[#8b92a9] text-center">
@@ -1133,6 +1691,16 @@ export default function ProductDetailsPage({
           to {
             opacity: 1;
             transform: scale(1);
+          }
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
         }
         @keyframes slideup {
@@ -1165,6 +1733,9 @@ export default function ProductDetailsPage({
         }
         .animate-fadein {
           animation: fadein 1s ease;
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.5s ease-out;
         }
         .animate-slideup {
           animation: slideup 1s cubic-bezier(0.4, 2, 0.3, 1);

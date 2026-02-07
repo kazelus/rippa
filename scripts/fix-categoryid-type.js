@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
@@ -9,10 +9,10 @@ async function main() {
       ALTER TABLE "Model" 
       ALTER COLUMN "categoryId" TYPE TEXT;
     `;
-    
-    console.log('✓ Fixed categoryId column type');
+
+    console.log("✓ Fixed categoryId column type");
   } catch (err) {
-    console.error('Error:', err);
+    console.error("Error:", err);
   } finally {
     await prisma.$disconnect();
   }

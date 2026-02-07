@@ -8,13 +8,19 @@ export async function GET(req: NextRequest) {
   try {
     await initializeDatabase();
 
+    // Check if admin is requesting (to show all models including hidden)
+    const session = await getServerSession(authOptions);
+    const isAdmin = !!session?.user?.id;
+    const showAll = req.nextUrl.searchParams.get("all") === "true" && isAdmin;
+
     // Fetch models with category info
     const modelsResult = await pool.query(`
       SELECT m.id, m.name, m.description, m."heroDescription", m.power, m.depth, m.weight, m.bucket, m.price, 
-             m.featured, m."categoryId", m."heroImageId", m."adminId", m."createdAt", m."updatedAt",
+             m.featured, COALESCE(m.visible, true) as visible, m."categoryId", m."heroImageId", m."adminId", m."createdAt", m."updatedAt",
              c.id as "category_id", c.name as "category_name", c.slug as "category_slug"
       FROM "Model" m
       LEFT JOIN "Category" c ON m."categoryId" = c.id
+      ${!showAll ? "WHERE COALESCE(m.visible, true) = true" : ""}
       ORDER BY m."createdAt" DESC
     `);
 
@@ -40,6 +46,15 @@ export async function GET(req: NextRequest) {
           [model.id],
         );
 
+        // Fetch product parameter values (join with definitions)
+        const parametersResult = await pool.query(
+          `SELECT pd.id as parameter_id, pd.key, pd.label, pd.unit, pd.type, pd.options, pd."isQuickSpec", pd."quickSpecOrder", pd."quickSpecLabel", ppv.value
+           FROM "ProductParameterValue" ppv
+           JOIN "ParameterDefinition" pd ON ppv."parameterId" = pd.id
+           WHERE ppv."productId" = $1`,
+          [model.id],
+        );
+
         return {
           id: model.id,
           name: model.name,
@@ -51,6 +66,7 @@ export async function GET(req: NextRequest) {
           bucket: model.bucket,
           price: model.price,
           featured: model.featured,
+          visible: model.visible,
           categoryId: model.categoryId,
           heroImageId: model.heroImageId,
           category: model.category_id
@@ -79,6 +95,30 @@ export async function GET(req: NextRequest) {
             options: f.options ? JSON.parse(f.options) : null,
             value: f.value || null,
           })),
+          parameters: parametersResult.rows.map((p: any) => ({
+            id: p.parameter_id,
+            key: p.key,
+            label: p.label,
+            unit: p.unit,
+            type: p.type,
+            options: p.options ? JSON.parse(p.options) : null,
+            value: p.value || null,
+            isQuickSpec: p.isQuickSpec || false,
+            quickSpecOrder: p.quickSpecOrder || 0,
+            quickSpecLabel: p.quickSpecLabel || null,
+          })),
+          quickSpecs: parametersResult.rows
+            .filter((p: any) => p.isQuickSpec)
+            .sort(
+              (a: any, b: any) =>
+                (a.quickSpecOrder || 0) - (b.quickSpecOrder || 0),
+            )
+            .map((p: any) => ({
+              label: p.quickSpecLabel || p.label,
+              value: p.value || null,
+              unit: p.unit || "",
+              paramLabel: p.label,
+            })),
         };
       }),
     );
@@ -108,12 +148,13 @@ export async function POST(req: NextRequest) {
       name,
       description,
       heroDescription,
-      power,
-      depth,
-      weight,
-      bucket,
+      power = "",
+      depth = "",
+      weight = "",
+      bucket = "",
       price,
       featured,
+      visible,
       categoryId,
       heroImageId,
       images = [],
@@ -121,7 +162,7 @@ export async function POST(req: NextRequest) {
       downloads = [],
     } = body;
 
-    if (!name || !power || !depth || !weight || !bucket || !price) {
+    if (!name || !price) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
@@ -138,9 +179,9 @@ export async function POST(req: NextRequest) {
 
     // Insert model with category and heroImageId
     const modelResult = await pool.query(
-      `INSERT INTO "Model" (id, name, description, "heroDescription", power, depth, weight, bucket, price, featured, "categoryId", "heroImageId", "adminId", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
-       RETURNING id, name, description, "heroDescription", power, depth, weight, bucket, price, featured, "categoryId", "heroImageId", "adminId", "createdAt", "updatedAt"`,
+      `INSERT INTO "Model" (id, name, description, "heroDescription", power, depth, weight, bucket, price, featured, visible, "categoryId", "heroImageId", "adminId", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+       RETURNING id, name, description, "heroDescription", power, depth, weight, bucket, price, featured, visible, "categoryId", "heroImageId", "adminId", "createdAt", "updatedAt"`,
       [
         name,
         description || null,
@@ -151,6 +192,7 @@ export async function POST(req: NextRequest) {
         bucket,
         price,
         featured || false,
+        visible !== false,
         categoryId || null,
         heroImageId || null,
         session.user.id,
@@ -211,6 +253,18 @@ export async function POST(req: NextRequest) {
         await pool.query(
           'INSERT INTO "ProductFeatureValue" (id, "productId", "featureId", value, "createdAt", "updatedAt") VALUES (gen_random_uuid()::text, $1, $2, $3::jsonb, NOW(), NOW()) ON CONFLICT ("productId", "featureId") DO UPDATE SET value = EXCLUDED.value, "updatedAt" = NOW()',
           [model.id, f.featureId, JSON.stringify(f.value ?? null)],
+        );
+      }
+    }
+
+    // Insert provided parameter values (if any)
+    if (body.parameters && Array.isArray(body.parameters) && model) {
+      for (const p of body.parameters) {
+        // expect { parameterId, value }
+        if (!p.parameterId) continue;
+        await pool.query(
+          'INSERT INTO "ProductParameterValue" (id, "productId", "parameterId", value, "createdAt", "updatedAt") VALUES (gen_random_uuid()::text, $1, $2, $3::jsonb, NOW(), NOW()) ON CONFLICT ("productId", "parameterId") DO UPDATE SET value = EXCLUDED.value, "updatedAt" = NOW()',
+          [model.id, p.parameterId, JSON.stringify(p.value ?? null)],
         );
       }
     }

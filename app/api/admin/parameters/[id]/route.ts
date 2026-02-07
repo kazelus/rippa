@@ -11,7 +11,7 @@ export async function GET(
     await initializeDatabase();
     const { id } = await params;
     const result = await pool.query(
-      'SELECT id, "categoryId", key, label, unit, type, options, required, "order", "createdAt", "updatedAt" FROM "ParameterDefinition" WHERE id = $1',
+      'SELECT id, "categoryId", key, label, unit, type, options, required, "order", "group", "affectsPrice", "priceModifier", "priceModifierType", "isVariant", "variantOptions", "isQuickSpec", "quickSpecOrder", "quickSpecLabel", "createdAt", "updatedAt" FROM "ParameterDefinition" WHERE id = $1',
       [id],
     );
     if (result.rows.length === 0)
@@ -47,10 +47,19 @@ export async function PUT(
       options = null,
       required = false,
       order = 0,
+      group = null,
+      affectsPrice = false,
+      priceModifier = null,
+      priceModifierType = "fixed",
+      isVariant = false,
+      variantOptions = null,
+      isQuickSpec = false,
+      quickSpecOrder = 0,
+      quickSpecLabel = null,
     } = body;
 
     const update = await pool.query(
-      'UPDATE "ParameterDefinition" SET "categoryId" = $1, key = $2, label = $3, unit = $4, type = $5, options = $6, required = $7, "order" = $8, "updatedAt" = NOW() WHERE id = $9 RETURNING id, "categoryId", key, label, unit, type, options, required, "order", "createdAt", "updatedAt"',
+      'UPDATE "ParameterDefinition" SET "categoryId" = $1, key = $2, label = $3, unit = $4, type = $5, options = $6, required = $7, "order" = $8, "group" = $9, "affectsPrice" = $10, "priceModifier" = $11, "priceModifierType" = $12, "isVariant" = $13, "variantOptions" = $14, "isQuickSpec" = $15, "quickSpecOrder" = $16, "quickSpecLabel" = $17, "updatedAt" = NOW() WHERE id = $18 RETURNING id, "categoryId", key, label, unit, type, options, required, "order", "group", "affectsPrice", "priceModifier", "priceModifierType", "isVariant", "variantOptions", "isQuickSpec", "quickSpecOrder", "quickSpecLabel", "createdAt", "updatedAt"',
       [
         categoryId,
         key,
@@ -59,7 +68,16 @@ export async function PUT(
         type,
         options ? JSON.stringify(options) : null,
         required,
-        order,
+        Math.round(Number(order) || 0),
+        group,
+        !!affectsPrice,
+        priceModifier,
+        priceModifierType,
+        !!isVariant,
+        variantOptions ? JSON.stringify(variantOptions) : null,
+        !!isQuickSpec,
+        Math.round(Number(quickSpecOrder) || 0),
+        quickSpecLabel || null,
         id,
       ],
     );

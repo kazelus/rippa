@@ -1,8 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { UnifiedNavbar } from "@/components/UnifiedNavbar";
+
+// Helper to parse JSON-stored parameter/feature values
+function parseValue(val: any): any {
+  if (val == null) return null;
+  if (typeof val === "string") {
+    try {
+      return JSON.parse(val);
+    } catch {
+      return val;
+    }
+  }
+  return val;
+}
+
+// Format price nicely
+function formatPrice(value: number) {
+  return Math.round(value).toLocaleString("pl-PL").replace(/,/g, " ");
+}
 
 export default function ComparePage() {
   const [items, setItems] = useState<any[]>([]);
@@ -45,7 +63,66 @@ export default function ComparePage() {
     setModels((m) => m.filter((x) => x.id !== id));
   };
 
-  if (loading) return <div className="p-12 text-white">Ładowanie...</div>;
+  // Collect all unique parameters across all models (by key)
+  const allParameters = (() => {
+    const map = new Map<
+      string,
+      { key: string; label: string; unit: string; group: string; order: number }
+    >();
+    for (const m of models) {
+      if (m.parameters) {
+        for (const p of m.parameters) {
+          if (!map.has(p.key)) {
+            map.set(p.key, {
+              key: p.key,
+              label: p.label,
+              unit: p.unit || "",
+              group: p.group || "Ogólne",
+              order: p.quickSpecOrder || 999,
+            });
+          }
+        }
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.order - b.order);
+  })();
+
+  // Group parameters by group name
+  const parameterGroups = (() => {
+    const groups = new Map<string, typeof allParameters>();
+    for (const p of allParameters) {
+      const g = p.group;
+      if (!groups.has(g)) groups.set(g, []);
+      groups.get(g)!.push(p);
+    }
+    return Array.from(groups.entries());
+  })();
+
+  // Collect all unique features across all models (by key)
+  const allFeatures = (() => {
+    const map = new Map<string, { key: string; label: string; type: string }>();
+    for (const m of models) {
+      if (m.features) {
+        for (const f of m.features) {
+          if (!map.has(f.key)) {
+            map.set(f.key, { key: f.key, label: f.label, type: f.type });
+          }
+        }
+      }
+    }
+    return Array.from(map.values());
+  })();
+
+  if (loading)
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0f1419] to-[#1a1f2e] text-white">
+        <UnifiedNavbar />
+        <div className="max-w-4xl mx-auto pt-32 p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1b3caf] mx-auto" />
+          <p className="text-[#b0b0b0] mt-4">Ładowanie porównania...</p>
+        </div>
+      </div>
+    );
 
   if (items.length === 0)
     return (
@@ -54,7 +131,7 @@ export default function ComparePage() {
         <div className="max-w-4xl mx-auto pt-32 p-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Brak modeli do porównania</h2>
           <p className="text-[#b0b0b0] mb-6">
-            Przejdź do strony modelu i kliknij "Dodaj do porównania".
+            Przejdź do strony modelu i kliknij &quot;Dodaj do porównania&quot;.
           </p>
           <Link
             href="/products"
@@ -66,10 +143,46 @@ export default function ComparePage() {
       </div>
     );
 
+  // Row component for table
+  const Row = ({
+    label,
+    values,
+    isHeader,
+    highlight,
+  }: {
+    label: string;
+    values: string[];
+    isHeader?: boolean;
+    highlight?: boolean;
+  }) => (
+    <tr
+      className={`border-t border-white/6 ${highlight ? "bg-[#1b3caf]/5" : ""}`}
+    >
+      <td
+        className={`p-3 text-sm sticky left-0 z-20 bg-[#071026] ${
+          isHeader
+            ? "text-white font-bold text-xs uppercase tracking-wider"
+            : "text-[#b0b0b0]"
+        }`}
+      >
+        {label}
+      </td>
+      {values.map((v, i) => (
+        <td
+          key={i}
+          className={`p-3 ${isHeader ? "font-semibold text-white" : ""}`}
+        >
+          {v}
+        </td>
+      ))}
+    </tr>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#071026] via-[#0f1724] to-[#071026] text-white">
       <UnifiedNavbar />
       <div className="max-w-7xl mx-auto pt-28 px-4 sm:px-6 lg:px-8 pb-20">
+        {/* Header */}
         <div className="bg-gradient-to-r from-[#081125] to-[#071026] rounded-2xl p-8 mb-8 border border-white/6 shadow-2xl">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -82,12 +195,12 @@ export default function ComparePage() {
             <div className="flex items-center gap-3">
               <Link
                 href="/products"
-                className="px-4 py-2 bg-white/5 rounded hover:bg-white/10"
+                className="px-4 py-2 bg-white/5 rounded hover:bg-white/10 transition"
               >
                 Przeglądaj katalog
               </Link>
               <Link
-                href="/"
+                href="/contact"
                 className="px-4 py-2 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] rounded font-semibold"
               >
                 Skontaktuj się
@@ -96,123 +209,164 @@ export default function ComparePage() {
           </div>
         </div>
 
-        <div className="flex gap-4 mb-6">
-          {items.map((it) => {
-            const full = models.find((m) => String(m.id) === String(it.id));
-            return (
-              <div
-                key={it.id}
-                className="min-w-[220px] p-4 bg-white/5 rounded-xl border border-white/8 shadow-md"
-              >
-                <div className="flex items-center gap-3">
-                  {it.url ? (
-                    <img
-                      src={it.url}
-                      className="w-16 h-16 object-cover rounded"
-                      alt={it.name || ""}
-                    />
-                  ) : null}
-                  <div>
-                    <div className="font-semibold text-lg">{it.name}</div>
-                    <div className="text-sm text-[#9aa6b8]">
-                      {full
-                        ? full.price?.toLocaleString("pl-PL") + " PLN"
-                        : "—"}
-                    </div>
+        {/* Model cards strip */}
+        <div className="flex gap-4 mb-6 overflow-x-auto pb-2">
+          {models.map((m) => (
+            <div
+              key={m.id}
+              className="min-w-[220px] p-4 bg-white/5 rounded-xl border border-white/8 shadow-md flex-shrink-0"
+            >
+              <div className="flex items-center gap-3">
+                {m.images && m.images.length > 0 ? (
+                  <img
+                    src={m.images[0].url}
+                    className="w-16 h-16 object-cover rounded"
+                    alt={m.name || ""}
+                  />
+                ) : null}
+                <div className="min-w-0">
+                  <div className="font-semibold text-lg truncate">{m.name}</div>
+                  <div className="text-sm text-[#9aa6b8]">
+                    {m.category?.name || "—"}
+                  </div>
+                  <div className="text-sm text-white font-bold">
+                    {formatPrice(Number(m.price))} PLN
                   </div>
                 </div>
-                <div className="mt-3 flex items-center justify-between">
-                  <Link
-                    href={`/products/${it.id}`}
-                    className="text-sm text-[#1b3caf]"
-                  >
-                    Zobacz
-                  </Link>
-                  <button
-                    onClick={() => remove(it.id)}
-                    className="text-red-400 text-sm"
-                  >
-                    Usuń
-                  </button>
-                </div>
               </div>
-            );
-          })}
+              <div className="mt-3 flex items-center justify-between">
+                <Link
+                  href={`/products/${m.id}`}
+                  className="text-sm text-[#1b3caf] hover:text-[#0f9fdf] transition"
+                >
+                  Zobacz
+                </Link>
+                <button
+                  onClick={() => remove(m.id)}
+                  className="text-red-400 text-sm hover:text-red-300 transition"
+                >
+                  Usuń
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
 
+        {/* Comparison Table */}
         <div className="overflow-auto bg-white/3 rounded-xl border border-white/8">
           <table className="w-full table-fixed">
             <thead>
               <tr className="bg-gradient-to-r from-[#071026] to-[#0b1622] text-[#9aa6b8]">
-                <th className="p-3 text-left sticky left-0 z-30">Atrybut</th>
+                <th className="p-3 text-left sticky left-0 z-30 bg-[#071026] w-[200px]">
+                  Atrybut
+                </th>
                 {models.map((m) => (
-                  <th key={m.id} className="p-3 text-left">
+                  <th key={m.id} className="p-3 text-left min-w-[180px]">
                     {m.name}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {/* Basic fields */}
-              {[
-                ["Cena", (m: any) => m.price?.toLocaleString("pl-PL") + " PLN"],
-                ["Moc", (m: any) => m.power + " KM"],
-                ["Głębokość", (m: any) => m.depth + " m"],
-                ["Waga", (m: any) => m.weight + " t"],
-                ["Pojemność łyżki", (m: any) => m.bucket + " m³"],
-              ].map(([label, fn]: any, idx) => (
-                <tr
-                  key={label}
-                  className={`${idx % 2 === 0 ? "bg-white/2" : ""} border-t border-white/6`}
-                >
-                  <td className="p-3 text-sm text-[#b0b0b0] sticky left-0 bg-[#071026] z-20">
-                    {label}
-                  </td>
-                  {models.map((m) => (
-                    <td key={m.id} className="p-3">
-                      {fn(m)}
-                    </td>
-                  ))}
-                </tr>
+              {/* === Basic Info === */}
+              <Row
+                label="INFORMACJE PODSTAWOWE"
+                values={models.map(() => "")}
+                isHeader
+              />
+              <Row
+                label="Kategoria"
+                values={models.map((m) => m.category?.name || "—")}
+              />
+              <Row
+                label="Cena"
+                values={models.map(
+                  (m) => formatPrice(Number(m.price)) + " PLN",
+                )}
+                highlight
+              />
+
+              {/* === Dynamic Parameters by group === */}
+              {parameterGroups.map(([groupName, params]) => (
+                <Fragment key={`group-${groupName}`}>
+                  <Row
+                    label={groupName.toUpperCase()}
+                    values={models.map(() => "")}
+                    isHeader
+                  />
+                  {params.map((param) => {
+                    const values = models.map((m) => {
+                      const found = m.parameters?.find(
+                        (p: any) => p.key === param.key,
+                      );
+                      if (!found || found.value == null) return "—";
+                      const parsed = parseValue(found.value);
+                      if (parsed == null || parsed === "") return "—";
+                      return `${parsed}${param.unit ? ` ${param.unit}` : ""}`;
+                    });
+                    return (
+                      <Row
+                        key={param.key}
+                        label={param.label}
+                        values={values}
+                      />
+                    );
+                  })}
+                </Fragment>
               ))}
 
-              {/* Dynamic features */}
-              {(() => {
-                const allFeatures = new Map<string, any>();
-                for (const m of models) {
-                  if (m.features) {
-                    for (const f of m.features) {
-                      allFeatures.set(f.key, f);
-                    }
-                  }
-                }
-                return Array.from(allFeatures.values()).map((f) => (
-                  <tr key={f.key} className="border-t border-white/6">
-                    <td className="p-3 text-sm text-[#b0b0b0] sticky left-0 bg-[#071026] z-20">
-                      {f.label}
-                    </td>
-                    {models.map((m) => {
+              {/* === Dynamic Features === */}
+              {allFeatures.length > 0 && (
+                <>
+                  <Row
+                    label="CECHY / WYPOSAŻENIE"
+                    values={models.map(() => "")}
+                    isHeader
+                  />
+                  {allFeatures.map((feat) => {
+                    const values = models.map((m) => {
                       const found = m.features?.find(
-                        (x: any) => x.key === f.key,
+                        (f: any) => f.key === feat.key,
                       );
-                      let disp = (found && (found.value ?? "—")) || "—";
-                      if (f.type === "boolean")
-                        disp = found && found.value ? "Tak" : "Nie";
-                      if (f.type === "date" && found && found.value)
-                        disp = new Date(found.value).toLocaleDateString(
-                          "pl-PL",
-                        );
-                      return (
-                        <td key={m.id} className="p-3">
-                          {disp}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ));
-              })()}
+                      if (!found || found.value == null) return "—";
+                      const parsed = parseValue(found.value);
+                      if (parsed == null || parsed === "") return "—";
+
+                      if (feat.type === "boolean") {
+                        return parsed === true || parsed === "true"
+                          ? "✓ Tak"
+                          : "✗ Nie";
+                      }
+                      if (
+                        feat.type === "date" &&
+                        typeof parsed === "string" &&
+                        parsed.includes("-")
+                      ) {
+                        return new Date(parsed).toLocaleDateString("pl-PL");
+                      }
+                      return String(parsed);
+                    });
+                    return (
+                      <Row key={feat.key} label={feat.label} values={values} />
+                    );
+                  })}
+                </>
+              )}
             </tbody>
           </table>
+        </div>
+
+        {/* Bottom CTA */}
+        <div className="mt-8 text-center">
+          <p className="text-[#9aa6b8] mb-4">
+            Nie możesz się zdecydować? Nasi specjaliści chętnie pomogą.
+          </p>
+          <Link
+            href="/contact"
+            className="inline-block px-8 py-3 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] rounded-lg font-bold hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300"
+          >
+            Zapytaj eksperta
+          </Link>
         </div>
       </div>
     </div>

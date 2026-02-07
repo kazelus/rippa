@@ -42,10 +42,62 @@ export async function GET(
 
     // Fetch product feature values (join with definitions)
     const featuresResult = await pool.query(
-      `SELECT fd.id as feature_id, fd.key, fd.label, fd.type, fd.options, pfv.value
+      `SELECT fd.id as feature_id, fd.key, fd.label, fd.type, fd.options, fd."affectsPrice", fd."priceModifier", fd."priceModifierType", fd."isVariant", fd."variantOptions", pfv.value
        FROM "ProductFeatureValue" pfv
        JOIN "FeatureDefinition" fd ON pfv."featureId" = fd.id
        WHERE pfv."productId" = $1`,
+      [id],
+    );
+
+    // Fetch product parameter values (join with definitions)
+    const parametersResult = await pool.query(
+      `SELECT pd.id as parameter_id, pd.key, pd.label, pd.type, pd.unit, pd.options, pd."group", pd."affectsPrice", pd."priceModifier", pd."priceModifierType", pd."isVariant", pd."variantOptions", pd."isQuickSpec", pd."quickSpecOrder", pd."quickSpecLabel", ppv.value
+       FROM "ProductParameterValue" ppv
+       JOIN "ParameterDefinition" pd ON ppv."parameterId" = pd.id
+       WHERE ppv."productId" = $1
+       ORDER BY pd."order" ASC`,
+      [id],
+    );
+
+    // Fetch model variant groups + options
+    const variantGroupsResult = await pool.query(
+      'SELECT * FROM "ModelVariantGroup" WHERE "modelId" = $1 ORDER BY "order" ASC, "createdAt" ASC',
+      [id],
+    );
+    const variantGroups = [];
+    for (const group of variantGroupsResult.rows) {
+      const optionsResult = await pool.query(
+        'SELECT * FROM "ModelVariantOption" WHERE "groupId" = $1 ORDER BY "order" ASC, "createdAt" ASC',
+        [group.id],
+      );
+      variantGroups.push({
+        id: group.id,
+        name: group.name,
+        order: group.order,
+        options: optionsResult.rows.map((o: any) => ({
+          id: o.id,
+          name: o.name,
+          priceModifier: parseFloat(o.priceModifier) || 0,
+          isDefault: o.isDefault || false,
+          images: o.images || null,
+          parameterOverrides: o.parameterOverrides || null,
+        })),
+      });
+    }
+
+    // Fetch linked accessories (models linked via ModelAccessory in BOTH directions)
+    // Only show accessories that are visible (not hidden from the store)
+    const accessoriesResult = await pool.query(
+      `SELECT DISTINCT m.id, m.name, m.description, m.price,
+              (SELECT url FROM "Image" WHERE "modelId" = m.id ORDER BY "createdAt" DESC LIMIT 1) as "imageUrl"
+       FROM "ModelAccessory" ma
+       JOIN "Model" m ON (
+         (ma."parentModelId" = $1 AND m.id = ma."accessoryModelId")
+         OR
+         (ma."accessoryModelId" = $1 AND m.id = ma."parentModelId")
+       )
+       WHERE m.id != $1 AND COALESCE(m.visible, true) = true
+       ORDER BY m.name ASC`,
       [id],
     );
 
@@ -71,6 +123,41 @@ export async function GET(
             : f.options
           : null,
         value: f.value ?? null,
+        affectsPrice: f.affectsPrice || false,
+        priceModifier: f.priceModifier ? parseFloat(f.priceModifier) : null,
+        priceModifierType: f.priceModifierType || "fixed",
+        isVariant: f.isVariant || false,
+        variantOptions: f.variantOptions || null,
+      })),
+      parameters: parametersResult.rows.map((p: any) => ({
+        id: p.parameter_id,
+        key: p.key,
+        label: p.label,
+        type: p.type,
+        unit: p.unit,
+        group: p.group,
+        options: p.options
+          ? typeof p.options === "string"
+            ? JSON.parse(p.options)
+            : p.options
+          : null,
+        value: p.value ?? null,
+        affectsPrice: p.affectsPrice || false,
+        priceModifier: p.priceModifier ? parseFloat(p.priceModifier) : null,
+        priceModifierType: p.priceModifierType || "fixed",
+        isVariant: p.isVariant || false,
+        variantOptions: p.variantOptions || null,
+        isQuickSpec: p.isQuickSpec || false,
+        quickSpecOrder: p.quickSpecOrder || 0,
+        quickSpecLabel: p.quickSpecLabel || null,
+      })),
+      variantGroups,
+      accessories: accessoriesResult.rows.map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        description: a.description,
+        price: a.price ? parseFloat(a.price) : null,
+        imageUrl: a.imageUrl,
       })),
     });
   } catch (error) {
@@ -100,12 +187,13 @@ export async function PUT(
       name,
       description,
       heroDescription,
-      power,
-      depth,
-      weight,
-      bucket,
+      power = "",
+      depth = "",
+      weight = "",
+      bucket = "",
       price,
       featured,
+      visible,
       categoryId,
       heroImageId,
       images = [],
@@ -121,7 +209,7 @@ export async function PUT(
       Array.isArray(images) ? images.length : "no-array",
     );
 
-    if (!name || !power || !depth || !weight || !bucket || !price) {
+    if (!name || !price) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
@@ -157,10 +245,11 @@ export async function PUT(
         bucket = $7, 
         price = $8, 
         featured = $9,
-        "categoryId" = $10,
-        "heroImageId" = COALESCE($11, "heroImageId"),
+        visible = $10,
+        "categoryId" = $11,
+        "heroImageId" = COALESCE($12, "heroImageId"),
         "updatedAt" = CURRENT_TIMESTAMP
-      WHERE id = $12`,
+      WHERE id = $13`,
       [
         name,
         description,
@@ -171,6 +260,7 @@ export async function PUT(
         bucket,
         price,
         featured,
+        visible !== false,
         categoryId || null,
         // pass null if undefined so COALESCE will keep existing
         typeof heroImageId === "undefined" ? null : heroImageId,
@@ -286,6 +376,17 @@ export async function PUT(
       }
     }
 
+    // Handle parameter values if provided
+    if (body.parameters && Array.isArray(body.parameters)) {
+      for (const p of body.parameters) {
+        if (!p.parameterId) continue;
+        await pool.query(
+          'INSERT INTO "ProductParameterValue" (id, "productId", "parameterId", value, "createdAt", "updatedAt") VALUES (gen_random_uuid()::text, $1, $2, $3::jsonb, NOW(), NOW()) ON CONFLICT ("productId", "parameterId") DO UPDATE SET value = EXCLUDED.value, "updatedAt" = NOW()',
+          [id, p.parameterId, JSON.stringify(p.value ?? null)],
+        );
+      }
+    }
+
     // Fetch updated model with images
     const updatedModel = await pool.query(
       'SELECT * FROM "Model" WHERE id = $1',
@@ -324,6 +425,74 @@ export async function PUT(
     );
   } catch (error) {
     console.error("[MODEL_PUT]", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    await initializeDatabase();
+
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = await req.json();
+
+    // Verify model exists
+    const modelResult = await pool.query(
+      'SELECT * FROM "Model" WHERE id = $1',
+      [id],
+    );
+
+    if (modelResult.rows.length === 0) {
+      return NextResponse.json({ error: "Model not found" }, { status: 404 });
+    }
+
+    // Build dynamic SET clause from allowed fields
+    const allowedFields: Record<string, string> = {
+      visible: "visible",
+      featured: "featured",
+      name: "name",
+      price: "price",
+    };
+
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    for (const [key, column] of Object.entries(allowedFields)) {
+      if (Object.prototype.hasOwnProperty.call(body, key)) {
+        setClauses.push(`"${column}" = $${paramIndex}`);
+        values.push(body[key]);
+        paramIndex++;
+      }
+    }
+
+    if (setClauses.length === 0) {
+      return NextResponse.json(
+        { error: "No valid fields to update" },
+        { status: 400 },
+      );
+    }
+
+    setClauses.push(`"updatedAt" = NOW()`);
+    values.push(id);
+
+    const query = `UPDATE "Model" SET ${setClauses.join(", ")} WHERE id = $${paramIndex} RETURNING *`;
+    const result = await pool.query(query, values);
+
+    return NextResponse.json(result.rows[0]);
+  } catch (error) {
+    console.error("[MODEL_PATCH]", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

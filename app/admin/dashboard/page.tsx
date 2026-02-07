@@ -2,269 +2,459 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Button } from "@/components/Button";
-import AdminTile from "@/components/AdminTile";
+import {
+  Plus,
+  Package,
+  Mail,
+  Settings,
+  Tag,
+  SlidersHorizontal,
+  Puzzle,
+  MessageCircle,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Clock,
+  Bell,
+  TrendingUp,
+  BarChart3,
+  CheckCircle2,
+  AlertCircle,
+  Inbox,
+  ExternalLink,
+} from "lucide-react";
+
+interface ContactSubmission {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+  topic?: string;
+  read: boolean;
+  createdAt: string;
+  product?: { id: string; name: string } | null;
+}
 
 export default function AdminDashboard() {
-  const [models, setModels] = useState([]);
+  const [models, setModels] = useState<any[]>([]);
+  const [contacts, setContacts] = useState<ContactSubmission[]>([]);
+  const [totalContacts, setTotalContacts] = useState(0);
+  const [unreadContacts, setUnreadContacts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchModels();
+    fetchData();
   }, []);
 
-  const fetchModels = async () => {
+  const fetchData = async () => {
     try {
-      const response = await fetch("/api/models");
-      const data = await response.json();
-      setModels(data);
+      setIsLoading(true);
+      const [modelsRes, contactsRes, unreadRes] = await Promise.all([
+        fetch("/api/models?all=true"),
+        fetch("/api/admin/contacts?pageSize=5"),
+        fetch("/api/admin/contacts?unread=1&pageSize=100"),
+      ]);
+
+      const modelsData = await modelsRes.json();
+      const contactsData = await contactsRes.json();
+      const unreadData = await unreadRes.json();
+
+      setModels(modelsData);
+      setContacts(contactsData.items || []);
+      setTotalContacts(contactsData.total || 0);
+      setUnreadContacts(unreadData.total || 0);
     } catch (error) {
-      console.error("Error fetching models:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (
-      !window.confirm(
-        "Na pewno chcesz usunąć ten model? Akcji nie da się cofnąć.",
-      )
-    ) {
-      return;
-    }
-    setDeletingId(id);
+  const markAsRead = async (id: string) => {
     try {
-      const response = await fetch(`/api/models/${id}`, {
-        method: "DELETE",
+      await fetch("/api/admin/contacts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, read: true }),
       });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Błąd podczas usuwania");
-      }
-      setModels((prev) => prev.filter((m: any) => m.id !== id));
+      setContacts((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, read: true } : c)),
+      );
+      setUnreadContacts((prev) => Math.max(0, prev - 1));
     } catch (error) {
-      console.error("Error deleting model:", error);
-      alert("Błąd podczas usuwania modelu");
-    } finally {
-      setDeletingId(null);
+      console.error("Error marking as read:", error);
     }
   };
 
+  const visibleModels = models.filter((m: any) => m.visible !== false);
+  const hiddenModels = models.filter((m: any) => m.visible === false);
+  const featuredModels = models.filter((m: any) => m.featured);
+
+  function timeAgo(dateStr: string) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Przed chwilą";
+    if (mins < 60) return `${mins} min temu`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h temu`;
+    const days = Math.floor(hours / 24);
+    if (days === 1) return "Wczoraj";
+    return `${days} dni temu`;
+  }
+
   if (isLoading) {
-    return <p className="text-white">Ładowanie modeli...</p>;
+    return (
+      <div className="flex items-center justify-center py-32">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#1b3caf] border-t-transparent" />
+          <p className="text-[#8b92a9] text-sm">Ładowanie dashboardu...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div>
-      {/* Navigation */}
-      <div className="mb-12">
-        <h2 className="text-3xl font-bold text-white mb-6">Dashboard</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <AdminTile href="/admin/models/new" title="Dodaj nowy model">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-          </AdminTile>
-
-          <AdminTile href="/admin/models" title="Zarządzaj modelami">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <rect x="4" y="7" width="16" height="13" rx="2" />
-              <path d="M8 7V5a4 4 0 018 0v2" />
-            </svg>
-          </AdminTile>
-
-          <AdminTile href="/admin/contacts" title="Zgłoszenia kontaktowe">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path d="M21 8V7a2 2 0 00-2-2H5a2 2 0 00-2 2v1" />
-              <rect x="3" y="8" width="18" height="10" rx="2" />
-              <path d="M7 12h10M7 16h6" />
-            </svg>
-          </AdminTile>
-
-          <AdminTile href="/admin/settings/smtp" title="Ustawienia">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 8v4l3 3" />
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82L4.21 3.4A2 2 0 016.04.57l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V1a2 2 0 014 0v.09c.12.83.66 1.48 1.51 1.51h.09a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.01.83.66 1.48 1.51 1.51H21a2 2 0 010 4h-.06c-.85.03-1.5.68-1.51 1.51v.09c0 .58.36 1.09.92 1.37z" />
-            </svg>
-          </AdminTile>
-          <AdminTile href="/admin/categories" title="Zarządzaj kategoriami">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <rect x="4" y="4" width="16" height="16" rx="2" />
-              <path d="M9 9h6v6H9z" />
-            </svg>
-          </AdminTile>
-
-          <AdminTile href="/admin/features" title="Zarządzaj cechami">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path d="M3 7h18M3 12h18M3 17h18" />
-            </svg>
-          </AdminTile>
-
-          <AdminTile href="/admin/parameters" title="Parametry techniczne">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path d="M9 12h6M12 9v6" />
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-            </svg>
-          </AdminTile>
-
-          <AdminTile href="/admin/users" title="Zarządzaj użytkownikami">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 7a4 4 0 11-8 0 4 4 0 018 0zM6.5 20H.5" />
-            </svg>
-          </AdminTile>
+    <div className="space-y-8">
+      {/* ─── Header ─── */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <p className="text-[#8b92a9] text-sm mb-1">Panel administracyjny</p>
+          <h2 className="text-3xl font-bold text-white">Dashboard</h2>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/models/new"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white text-sm font-semibold rounded-xl hover:shadow-lg hover:shadow-[#1b3caf]/30 hover:scale-105 transition-all duration-300"
+          >
+            <Plus className="w-4 h-4" />
+            Nowy model
+          </Link>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <div className="bg-[#1a1f2e] border border-[#1b3caf]/30 rounded-xl p-8">
-          <p className="text-[#b0b0b0] text-sm mb-2">Wszystkie modele</p>
-          <p className="text-4xl font-bold text-[#1b3caf]">{models.length}</p>
-        </div>
-        <div className="bg-[#1a1f2e] border border-[#1b3caf]/30 rounded-xl p-8">
-          <p className="text-[#b0b0b0] text-sm mb-2">Modele aktywne</p>
-          <p className="text-4xl font-bold text-[#1b3caf]">
-            {models.filter((m: any) => m.featured).length}
-          </p>
-        </div>
-        <div className="bg-[#1a1f2e] border border-[#1b3caf]/30 rounded-xl p-8">
-          <p className="text-[#b0b0b0] text-sm mb-2">Ostatnia aktualizacja</p>
-          <p className="text-lg font-semibold text-white">
-            {new Date().toLocaleDateString("pl-PL")}
-          </p>
-        </div>
-      </div>
-
-      {/* Models List */}
-      <div className="bg-[#1a1f2e] border border-[#1b3caf]/30 rounded-xl p-8">
-        <h3 className="text-2xl font-bold text-white mb-6">Modele</h3>
-
-        {isLoading ? (
-          <p className="text-[#b0b0b0]">Ładowanie modeli...</p>
-        ) : models.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-[#b0b0b0] mb-4">Brak modeli w bazie</p>
-            <Link href="/admin/models/new">
-              <Button variant="primary">Stwórz pierwszy model</Button>
+      {/* ─── Stats Cards ─── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            label: "Modele w katalogu",
+            value: models.length,
+            icon: Package,
+            color: "from-[#1b3caf] to-[#0f9fdf]",
+            detail: `${visibleModels.length} widocznych`,
+            href: "/admin/models",
+          },
+          {
+            label: "Bestsellery",
+            value: featuredModels.length,
+            icon: TrendingUp,
+            color: "from-amber-500 to-orange-500",
+            detail: `z ${models.length} modeli`,
+            href: "/admin/models",
+          },
+          {
+            label: "Zgłoszenia",
+            value: totalContacts,
+            icon: Mail,
+            color: "from-emerald-500 to-teal-500",
+            detail: `${unreadContacts} nieprzeczytanych`,
+            href: "/admin/contacts",
+          },
+          {
+            label: "Ukryte modele",
+            value: hiddenModels.length,
+            icon: EyeOff,
+            color: "from-rose-500 to-pink-500",
+            detail: "niewidoczne na stronie",
+            href: "/admin/models",
+          },
+        ].map((stat, i) => {
+          const Icon = stat.icon;
+          return (
+            <Link
+              key={i}
+              href={stat.href}
+              className="group p-5 bg-gradient-to-br from-white/[6%] to-white/[2%] border border-white/10 rounded-2xl hover:border-[#1b3caf]/30 hover:-translate-y-0.5 transition-all duration-300"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div
+                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}
+                >
+                  <Icon className="w-5 h-5 text-white" />
+                </div>
+                <ArrowRight className="w-4 h-4 text-[#8b92a9] opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+              </div>
+              <p className="text-3xl font-bold text-white mb-0.5 tabular-nums">
+                {stat.value}
+              </p>
+              <p className="text-sm text-[#8b92a9]">{stat.label}</p>
+              <p className="text-xs text-[#6b7280] mt-1">{stat.detail}</p>
             </Link>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {models.map((model: any) => (
-              <div
-                key={model.id}
-                className="p-4 bg-[#242d3d] rounded-lg border border-[#1b3caf]/20 hover:border-[#1b3caf]/50 transition"
-              >
-                <div className="flex items-start gap-4">
-                  {/* Thumbnail */}
-                  {model.images && model.images.length > 0 ? (
-                    <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
-                      <img
-                        src={model.images[0].url}
-                        alt={model.images[0].alt || model.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-24 h-24 rounded-lg bg-[#1a1f2e] border border-[#1b3caf]/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-[#6b7280] text-xs">
-                        Brak zdjęcia
-                      </span>
-                    </div>
-                  )}
+          );
+        })}
+      </div>
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="text-white font-semibold">{model.name}</h4>
-                      {model.featured && (
-                        <span className="px-2 py-1 bg-[#1b3caf]/30 text-[#1b3caf] text-xs font-semibold rounded-full">
-                          Wyróżniony
-                        </span>
+      {/* ─── Quick Actions ─── */}
+      <div>
+        <h3 className="text-sm font-semibold text-[#8b92a9] uppercase tracking-wider mb-4">
+          Szybkie akcje
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {[
+            {
+              href: "/admin/models",
+              icon: Package,
+              label: "Modele",
+              color: "text-[#0f9fdf]",
+              bg: "bg-[#0f9fdf]/10",
+            },
+            {
+              href: "/admin/categories",
+              icon: Tag,
+              label: "Kategorie",
+              color: "text-violet-400",
+              bg: "bg-violet-400/10",
+            },
+            {
+              href: "/admin/features",
+              icon: SlidersHorizontal,
+              label: "Cechy",
+              color: "text-emerald-400",
+              bg: "bg-emerald-400/10",
+            },
+            {
+              href: "/admin/parameters",
+              icon: BarChart3,
+              label: "Parametry",
+              color: "text-amber-400",
+              bg: "bg-amber-400/10",
+            },
+            {
+              href: "/admin/accessories",
+              icon: Puzzle,
+              label: "Akcesoria",
+              color: "text-pink-400",
+              bg: "bg-pink-400/10",
+            },
+            {
+              href: "/admin/settings",
+              icon: Settings,
+              label: "Ustawienia",
+              color: "text-[#8b92a9]",
+              bg: "bg-white/5",
+            },
+          ].map((action, i) => {
+            const Icon = action.icon;
+            return (
+              <Link
+                key={i}
+                href={action.href}
+                className="group flex flex-col items-center gap-2.5 p-4 rounded-xl bg-white/[3%] border border-white/[6%] hover:border-white/15 hover:bg-white/[6%] hover:-translate-y-0.5 transition-all duration-300"
+              >
+                <div
+                  className={`w-10 h-10 ${action.bg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
+                >
+                  <Icon className={`w-5 h-5 ${action.color}`} />
+                </div>
+                <span className="text-sm text-[#b0b0b0] font-medium group-hover:text-white transition-colors">
+                  {action.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ─── Main content: Notifications + Recent Models ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Notifications / Contact submissions — 3 cols */}
+        <div className="lg:col-span-3 bg-gradient-to-br from-white/[6%] to-white/[2%] border border-white/10 rounded-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                <Bell className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold">Powiadomienia</h3>
+                <p className="text-xs text-[#8b92a9]">
+                  Ostatnie zgłoszenia kontaktowe
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {unreadContacts > 0 && (
+                <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full">
+                  {unreadContacts} nowych
+                </span>
+              )}
+              <Link
+                href="/admin/contacts"
+                className="text-xs text-[#8b92a9] hover:text-white transition flex items-center gap-1"
+              >
+                Wszystkie
+                <ExternalLink className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
+
+          {contacts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+              <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
+                <Inbox className="w-7 h-7 text-[#8b92a9]" />
+              </div>
+              <p className="text-white font-medium mb-1">Brak zgłoszeń</p>
+              <p className="text-[#8b92a9] text-sm">
+                Nowe wiadomości pojawią się tutaj
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-white/[6%]">
+              {contacts.map((contact) => (
+                <div
+                  key={contact.id}
+                  className={`px-6 py-4 hover:bg-white/[3%] transition-colors group ${
+                    !contact.read ? "bg-[#1b3caf]/[3%]" : ""
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Status indicator */}
+                    <div className="mt-1.5 flex-shrink-0">
+                      {!contact.read ? (
+                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50" />
+                      ) : (
+                        <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
                       )}
                     </div>
-                    <p className="text-sm text-[#b0b0b0] mb-2">
-                      Moc: {model.power} | Cena: {model.price}
-                    </p>
-                    <p className="text-xs text-[#6b7280]">
-                      Zdjęcia: {model.images?.length || 0}
-                    </p>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-2 flex-shrink-0">
-                    <Link href={`/admin/models/${model.id}/edit`}>
-                      <Button variant="outline" className="text-xs">
-                        Edytuj
-                      </Button>
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(model.id)}
-                      disabled={deletingId === model.id}
-                      className="px-3 py-1 text-xs text-red-400 border border-red-400/30 rounded-lg hover:bg-red-400/10 transition disabled:opacity-50"
-                    >
-                      {deletingId === model.id ? "Usuwanie..." : "Usuń"}
-                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className={`font-semibold truncate ${
+                              !contact.read ? "text-white" : "text-[#b0b0b0]"
+                            }`}
+                          >
+                            {contact.name}
+                          </span>
+                          {contact.topic && (
+                            <span className="px-2 py-0.5 bg-white/5 text-[#8b92a9] text-[10px] rounded-full flex-shrink-0 uppercase tracking-wider">
+                              {contact.topic}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-[#6b7280] flex-shrink-0 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {timeAgo(contact.createdAt)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-[#8b92a9] line-clamp-1 mb-1">
+                        {contact.message}
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-[#6b7280]">
+                          {contact.email}
+                        </span>
+                        {contact.product && (
+                          <span className="text-xs text-[#1b3caf]">
+                            → {contact.product.name}
+                          </span>
+                        )}
+                        {!contact.read && (
+                          <button
+                            onClick={() => markAsRead(contact.id)}
+                            className="text-xs text-emerald-400 hover:text-emerald-300 transition opacity-0 group-hover:opacity-100 flex items-center gap-1"
+                          >
+                            <CheckCircle2 className="w-3 h-3" />
+                            Oznacz jako przeczytane
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Recent models — 2 cols */}
+        <div className="lg:col-span-2 bg-gradient-to-br from-white/[6%] to-white/[2%] border border-white/10 rounded-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-[#1b3caf]/10 rounded-lg flex items-center justify-center">
+                <Package className="w-4 h-4 text-[#1b3caf]" />
               </div>
+              <h3 className="text-white font-semibold">Ostatnie modele</h3>
+            </div>
+            <Link
+              href="/admin/models"
+              className="text-xs text-[#8b92a9] hover:text-white transition flex items-center gap-1"
+            >
+              Zarządzaj
+              <ExternalLink className="w-3 h-3" />
+            </Link>
+          </div>
+
+          <div className="divide-y divide-white/[6%]">
+            {models.slice(0, 6).map((model: any) => (
+              <Link
+                key={model.id}
+                href={`/admin/models/${model.id}/edit`}
+                className="flex items-center gap-3 px-6 py-3.5 hover:bg-white/[3%] transition-colors group"
+              >
+                {/* Thumbnail */}
+                {model.images && model.images.length > 0 ? (
+                  <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-white/10">
+                    <img
+                      src={model.images[0].url}
+                      alt={model.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
+                    <Package className="w-4 h-4 text-[#6b7280]" />
+                  </div>
+                )}
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white font-medium truncate group-hover:text-[#0f9fdf] transition-colors">
+                    {model.name}
+                  </p>
+                  <p className="text-xs text-[#6b7280]">
+                    {model.price?.toLocaleString("pl-PL")} PLN
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {model.featured && (
+                    <span
+                      className="w-2 h-2 rounded-full bg-amber-400"
+                      title="Bestseller"
+                    />
+                  )}
+                  {model.visible === false ? (
+                    <EyeOff className="w-3.5 h-3.5 text-red-400/60" />
+                  ) : (
+                    <Eye className="w-3.5 h-3.5 text-emerald-400/60" />
+                  )}
+                  <ArrowRight className="w-3.5 h-3.5 text-[#8b92a9] opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </Link>
             ))}
           </div>
-        )}
+
+          {models.length > 6 && (
+            <div className="px-6 py-3 border-t border-white/[6%]">
+              <Link
+                href="/admin/models"
+                className="text-xs text-[#8b92a9] hover:text-white transition"
+              >
+                + {models.length - 6} więcej modeli...
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

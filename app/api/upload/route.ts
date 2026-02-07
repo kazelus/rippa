@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { put } from "@vercel/blob";
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
 
 export async function POST(req: NextRequest) {
   try {
@@ -51,20 +53,46 @@ export async function POST(req: NextRequest) {
     // Generate unique filename
     const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}-${file.name}`;
 
-    // Upload to Vercel Blob
-    const blob = await put(filename, file, {
-      access: "public",
-    });
+    // Check if we have Blob token (production) or use local storage (development)
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
 
-    // Return URL
-    return NextResponse.json(
-      {
-        success: true,
-        url: blob.url,
-        filename: filename,
-      },
-      { status: 201 },
-    );
+    if (blobToken) {
+      // Production: Upload to Vercel Blob
+      const blob = await put(filename, file, {
+        access: "public",
+      });
+
+      return NextResponse.json(
+        {
+          success: true,
+          url: blob.url,
+          filename: filename,
+        },
+        { status: 201 },
+      );
+    } else {
+      // Development: Save to local filesystem
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      // Ensure uploads directory exists
+      const uploadsDir = path.join(process.cwd(), "public", "uploads");
+      await mkdir(uploadsDir, { recursive: true });
+
+      // Write file
+      const filepath = path.join(uploadsDir, filename);
+      await writeFile(filepath, buffer);
+
+      // Return local URL
+      return NextResponse.json(
+        {
+          success: true,
+          url: `/uploads/${filename}`,
+          filename: filename,
+        },
+        { status: 201 },
+      );
+    }
   } catch (error: any) {
     console.error("[UPLOAD]", error);
     return NextResponse.json(

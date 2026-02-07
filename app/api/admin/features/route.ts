@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const categoryId = url.searchParams.get("categoryId");
 
     let query =
-      'SELECT id, "categoryId", key, label, type, options, required, "order", "createdAt", "updatedAt" FROM "FeatureDefinition"';
+      'SELECT id, "categoryId", key, label, type, options, required, "order", "affectsPrice", "priceModifier", "priceModifierType", "isVariant", "variantOptions", "createdAt", "updatedAt" FROM "FeatureDefinition"';
     const params: any[] = [];
     if (categoryId) {
       // Return features for the category plus global features (categoryId IS NULL)
@@ -49,6 +49,11 @@ export async function POST(req: NextRequest) {
       options = null,
       required = false,
       order = 0,
+      affectsPrice = false,
+      priceModifier = null,
+      priceModifierType = "fixed",
+      isVariant = false,
+      variantOptions = null,
     } = body;
 
     if (!key || !label) {
@@ -59,7 +64,7 @@ export async function POST(req: NextRequest) {
     }
 
     const insert = await pool.query(
-      'INSERT INTO "FeatureDefinition" (id, "categoryId", key, label, type, options, required, "order", "createdAt", "updatedAt") VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()) RETURNING id, "categoryId", key, label, type, options, required, "order", "createdAt", "updatedAt"',
+      'INSERT INTO "FeatureDefinition" (id, "categoryId", key, label, type, options, required, "order", "affectsPrice", "priceModifier", "priceModifierType", "isVariant", "variantOptions", "createdAt", "updatedAt") VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()) RETURNING id, "categoryId", key, label, type, options, required, "order", "affectsPrice", "priceModifier", "priceModifierType", "isVariant", "variantOptions", "createdAt", "updatedAt"',
       [
         categoryId,
         key,
@@ -68,6 +73,11 @@ export async function POST(req: NextRequest) {
         options ? JSON.stringify(options) : null,
         required,
         order,
+        affectsPrice,
+        priceModifier,
+        priceModifierType,
+        isVariant,
+        variantOptions ? JSON.stringify(variantOptions) : null,
       ],
     );
 

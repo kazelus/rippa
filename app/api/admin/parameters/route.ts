@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { initializeDatabase, pool } from "@/lib/db";
 
+// API endpoint for managing parameter definitions
 export async function GET(req: NextRequest) {
   try {
     await initializeDatabase();
@@ -10,7 +11,7 @@ export async function GET(req: NextRequest) {
     const categoryId = url.searchParams.get("categoryId");
 
     let query =
-      'SELECT id, "categoryId", key, label, unit, type, options, required, "order", "createdAt", "updatedAt" FROM "ParameterDefinition"';
+      'SELECT id, "categoryId", key, label, unit, type, options, required, "order", "group", "affectsPrice", "priceModifier", "priceModifierType", "isVariant", "variantOptions", "isQuickSpec", "quickSpecOrder", "quickSpecLabel", "createdAt", "updatedAt" FROM "ParameterDefinition"';
     const params: any[] = [];
     if (categoryId) {
       // Return parameters for the category plus global parameters (categoryId IS NULL)
@@ -50,6 +51,15 @@ export async function POST(req: NextRequest) {
       options = null,
       required = false,
       order = 0,
+      group = null,
+      affectsPrice = false,
+      priceModifier = null,
+      priceModifierType = "fixed",
+      isVariant = false,
+      variantOptions = null,
+      isQuickSpec = false,
+      quickSpecOrder = 0,
+      quickSpecLabel = null,
     } = body;
 
     if (!key || !label) {
@@ -60,7 +70,7 @@ export async function POST(req: NextRequest) {
     }
 
     const insert = await pool.query(
-      'INSERT INTO "ParameterDefinition" (id, "categoryId", key, label, unit, type, options, required, "order", "createdAt", "updatedAt") VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()) RETURNING id, "categoryId", key, label, unit, type, options, required, "order", "createdAt", "updatedAt"',
+      'INSERT INTO "ParameterDefinition" (id, "categoryId", key, label, unit, type, options, required, "order", "group", "affectsPrice", "priceModifier", "priceModifierType", "isVariant", "variantOptions", "isQuickSpec", "quickSpecOrder", "quickSpecLabel", "createdAt", "updatedAt") VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), NOW()) RETURNING id, "categoryId", key, label, unit, type, options, required, "order", "group", "affectsPrice", "priceModifier", "priceModifierType", "isVariant", "variantOptions", "isQuickSpec", "quickSpecOrder", "quickSpecLabel", "createdAt", "updatedAt"',
       [
         categoryId,
         key,
@@ -69,7 +79,16 @@ export async function POST(req: NextRequest) {
         type,
         options ? JSON.stringify(options) : null,
         required,
-        order,
+        Math.round(Number(order) || 0),
+        group,
+        affectsPrice,
+        priceModifier,
+        priceModifierType,
+        isVariant,
+        variantOptions ? JSON.stringify(variantOptions) : null,
+        !!isQuickSpec,
+        Math.round(Number(quickSpecOrder) || 0),
+        quickSpecLabel || null,
       ],
     );
 

@@ -22,6 +22,7 @@ export const UnifiedNavbar: React.FC = () => {
     { name: "Home", href: "/" },
     { name: "O nas", href: "/about" },
     { name: "Katalog", href: "/products" },
+    { name: "Finansowanie", href: "/financing" },
     { name: "Kontakt", href: "/contact" },
   ];
 

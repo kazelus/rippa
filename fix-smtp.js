@@ -7,9 +7,9 @@ async function fixSMTP() {
     update: { value: "false" },
     create: { key: "smtp_secure", value: "false" },
   });
-  
+
   console.log("✓ Fixed smtp_secure to false for port 587");
-  
+
   await prisma.$disconnect();
 }
 

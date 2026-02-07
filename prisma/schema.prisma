@@ -88,6 +88,7 @@ model Model {
   bucket             String
   price              String
   featured           Boolean               @default(false)
+  visible            Boolean               @default(true)
   adminId            String
   createdAt          DateTime              @default(now())
   updatedAt          DateTime              @updatedAt
@@ -101,6 +102,8 @@ model Model {
   category           Category?             @relation(fields: [categoryId], references: [id], onUpdate: NoAction)
   featureValues      ProductFeatureValue[]
   sections           Section[]
+  accessoriesAsParent  ModelAccessory[]     @relation("ParentModel")
+  accessoriesAsChild   ModelAccessory[]     @relation("AccessoryModel")
 
   @@index([adminId])
 }
@@ -164,18 +167,23 @@ model ChatMessage {
 }
 
 model FeatureDefinition {
-  id            String                @id @default(uuid())
-  categoryId    String?
-  key           String
-  label         String
-  type          String
-  options       Json?
-  required      Boolean               @default(false)
-  order         Int                   @default(0)
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
-  category      Category?             @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  productValues ProductFeatureValue[]
+  id                 String                @id @default(uuid())
+  categoryId         String?
+  key                String
+  label              String
+  type               String
+  options            Json?
+  required           Boolean               @default(false)
+  order              Int                   @default(0)
+  group              String?
+  affectsPrice       Boolean               @default(false)
+  priceModifier      Decimal?              @db.Decimal(10, 2)
+  priceModifierType  String?               @default("fixed") // 'fixed' or 'percentage'
+  isVariant          Boolean               @default(false)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  category           Category?             @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  productValues      ProductFeatureValue[]
 
   @@unique([categoryId, key])
   @@index([categoryId])
@@ -209,4 +217,65 @@ model ContactSubmission {
   product   Model?   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
+}
+
+model ModelAccessory {
+  id              String @id @default(uuid())
+  parentModelId   String
+  accessoryModelId String
+  parentModel     Model  @relation("ParentModel", fields: [parentModelId], references: [id], onDelete: Cascade)
+  accessoryModel  Model  @relation("AccessoryModel", fields: [accessoryModelId], references: [id], onDelete: Cascade)
+
+  @@unique([parentModelId, accessoryModelId])
+  @@index([parentModelId])
+  @@index([accessoryModelId])
+}
+
+model SectionTemplate {
+  id        String   @id @default(uuid())
+  name      String
+  title     String?
+  text      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ParameterDefinition {
+  id                 String                   @id @default(uuid())
+  categoryId         String?
+  key                String
+  label              String
+  type               String
+  unit               String?
+  options            Json?
+  required           Boolean                  @default(false)
+  order              Int                      @default(0)
+  group              String?
+  affectsPrice       Boolean                  @default(false)
+  priceModifier      Decimal?                 @db.Decimal(10, 2)
+  priceModifierType  String?                  @default("fixed") // 'fixed' or 'percentage'
+  isVariant          Boolean                  @default(false)
+  isQuickSpec        Boolean                  @default(false)
+  quickSpecOrder     Int                      @default(0)
+  quickSpecLabel     String?
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  productValues      ProductParameterValue[]
+
+  @@unique([categoryId, key])
+  @@index([categoryId])
+}
+
+model ProductParameterValue {
+  id          String              @id @default(uuid())
+  productId   String
+  parameterId String
+  value       Json?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  parameter   ParameterDefinition @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, parameterId])
+  @@index([productId])
+  @@index([parameterId])
 }

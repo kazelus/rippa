@@ -4,6 +4,16 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  Plus,
+  X,
+  SlidersHorizontal,
+  Pencil,
+  Trash2,
+  Layers,
+} from "lucide-react";
+import ConfirmModal from "@/components/ConfirmModal";
+import { showToast } from "@/lib/toast";
 
 export default function FeaturesAdminPage() {
   const { data: session, status } = useSession();
@@ -14,6 +24,7 @@ export default function FeaturesAdminPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
   const [form, setForm] = useState({
     categoryId: "",
@@ -50,10 +61,7 @@ export default function FeaturesAdminPage() {
   const fetchCategories = async () => {
     try {
       const res = await fetch("/api/categories");
-      if (res.ok) {
-        const data = await res.json();
-        setCategories(data || []);
-      }
+      if (res.ok) setCategories((await res.json()) || []);
     } catch (err) {
       console.error(err);
     }
@@ -81,18 +89,15 @@ export default function FeaturesAdminPage() {
         required: !!form.required,
         order: Number(form.order) || 0,
       };
-
       const res = await fetch("/api/admin/features", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to create feature");
       }
-
       setForm({
         categoryId: "",
         key: "",
@@ -112,199 +117,288 @@ export default function FeaturesAdminPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Usuń cechę? To działanie jest nieodwracalne.")) return;
     try {
       const res = await fetch(`/api/admin/features/${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Delete failed");
       fetchData();
+      showToast("Cecha usunięta", "success");
     } catch (err) {
       console.error(err);
-      alert("Nie udało się usunąć cechy");
+      showToast("Nie udało się usunąć cechy", "error");
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f1419] to-[#1a1f2e]">
-      <header className="bg-[#1a1f2e] border-b border-[#1b3caf]/30">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">Zarządzaj cechami</h1>
-        </div>
-      </header>
+  const inputClass =
+    "w-full px-4 py-2.5 bg-white/[5%] border border-white/10 rounded-xl text-white placeholder-[#6b7280] focus:outline-none focus:border-[#1b3caf]/50 transition text-sm";
+  const labelClass = "block text-sm font-medium text-[#b0b0b0] mb-2";
 
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-12 max-w-4xl mx-auto">
-        <div className="bg-[#1a1f2e] border border-[#1b3caf]/30 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg text-white font-semibold">Lista cech</h2>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setFormOpen((s) => !s)}
-                className="bg-[#1b3caf] text-white px-4 py-2 rounded"
-              >
-                {formOpen ? "Anuluj" : "Dodaj nową cechę"}
-              </button>
+  const typeLabels: Record<string, string> = {
+    text: "Tekst",
+    number: "Liczba",
+    boolean: "Tak/Nie",
+    enum: "Wybór",
+    date: "Data",
+  };
+
+  return (
+    <div className="space-y-8 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <p className="text-[#8b92a9] text-sm mb-1">
+            Definicje cech produktów
+          </p>
+          <h2 className="text-3xl font-bold text-white">Cechy</h2>
+        </div>
+        <button
+          onClick={() => setFormOpen((s) => !s)}
+          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white text-sm font-semibold rounded-xl hover:shadow-lg hover:shadow-[#1b3caf]/30 hover:scale-105 transition-all duration-300"
+        >
+          {formOpen ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          {formOpen ? "Anuluj" : "Dodaj cechę"}
+        </button>
+      </div>
+
+      {/* Add Form */}
+      {formOpen && (
+        <div className="bg-gradient-to-br from-white/[6%] to-white/[2%] border border-white/10 rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+              <SlidersHorizontal className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div>
+              <h3 className="text-white font-semibold">Nowa cecha</h3>
+              <p className="text-xs text-[#8b92a9]">
+                Definiuje pole danych dla produktów
+              </p>
             </div>
           </div>
 
-          {formOpen && (
-            <form
-              onSubmit={handleCreate}
-              className="mb-6 p-4 bg-[#242d3d] rounded"
-            >
-              {error && <p className="text-red-400 mb-2">{error}</p>}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm text-white block mb-1">
-                    Kategoria (opcjonalnie)
-                  </label>
-                  <select
-                    name="categoryId"
-                    value={form.categoryId}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 rounded bg-[#1a1f2e] text-white border border-[#1b3caf]/20"
-                  >
-                    <option value="">Wszystkie (globalna)</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm text-white block mb-1">Klucz</label>
-                  <input
-                    name="key"
-                    value={form.key}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 rounded bg-[#1a1f2e] text-white border border-[#1b3caf]/20"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-white block mb-1">
-                    Etykieta
-                  </label>
-                  <input
-                    name="label"
-                    value={form.label}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 rounded bg-[#1a1f2e] text-white border border-[#1b3caf]/20"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-white block mb-1">Typ</label>
-                  <select
-                    name="type"
-                    value={form.type}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 rounded bg-[#1a1f2e] text-white border border-[#1b3caf]/20"
-                  >
-                    <option value="text">Tekst</option>
-                    <option value="number">Liczba</option>
-                    <option value="boolean">Tak/Nie</option>
-                    <option value="enum">Wybór (enum)</option>
-                    <option value="date">Data</option>
-                  </select>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="text-sm text-white block mb-1">
-                    Opcje (JSON array dla enum lub pusty)
-                  </label>
-                  <textarea
-                    name="options"
-                    value={form.options}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 rounded bg-[#1a1f2e] text-white border border-[#1b3caf]/20"
-                    placeholder='e.g. ["Mini","Standard","Max"]'
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-white block mb-1">
-                    Wymagane
-                  </label>
-                  <input
-                    type="checkbox"
-                    name="required"
-                    checked={!!form.required}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-white block mb-1">
-                    Kolejność
-                  </label>
-                  <input
-                    type="number"
-                    name="order"
-                    value={form.order}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 rounded bg-[#1a1f2e] text-white border border-[#1b3caf]/20"
-                  />
-                </div>
-              </div>
-              <div className="mt-4">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="bg-green-600 px-4 py-2 rounded text-white"
-                >
-                  {saving ? "Zapisywanie..." : "Utwórz cechę"}
-                </button>
-              </div>
-            </form>
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
           )}
 
-          <div>
-            {loading ? (
-              <p className="text-white">Ładowanie...</p>
-            ) : (
-              <div className="space-y-2">
-                {features.length === 0 && (
-                  <p className="text-white">Brak zdefiniowanych cech.</p>
-                )}
-                {features.map((f) => (
-                  <div
-                    key={f.id}
-                    className="p-3 bg-[#242d3d] rounded flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="text-white font-medium">
-                        {f.label}{" "}
-                        <span className="text-xs text-[#6b7280]">
-                          ({f.key})
-                        </span>
-                      </div>
-                      <div className="text-sm text-[#9ca3af]">
-                        Typ: {f.type}{" "}
-                        {f.categoryId
-                          ? `• Kategoria: ${f.categoryId}`
-                          : "• Globalna"}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/admin/features/${f.id}/edit`}
-                        className="text-sm text-[#1b3caf]"
-                      >
-                        Edytuj
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(f.id)}
-                        className="text-red-400 text-sm"
-                      >
-                        Usuń
-                      </button>
-                    </div>
-                  </div>
-                ))}
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Kategoria (opcjonalnie)</label>
+                <select
+                  name="categoryId"
+                  value={form.categoryId}
+                  onChange={handleChange}
+                  className={inputClass}
+                >
+                  <option value="">Wszystkie (globalna)</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-            )}
+              <div>
+                <label className={labelClass}>Klucz *</label>
+                <input
+                  name="key"
+                  value={form.key}
+                  onChange={handleChange}
+                  className={inputClass}
+                  required
+                  placeholder="np. engine_type"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Etykieta *</label>
+                <input
+                  name="label"
+                  value={form.label}
+                  onChange={handleChange}
+                  className={inputClass}
+                  required
+                  placeholder="np. Typ silnika"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Typ</label>
+                <select
+                  name="type"
+                  value={form.type}
+                  onChange={handleChange}
+                  className={inputClass}
+                >
+                  <option value="text">Tekst</option>
+                  <option value="number">Liczba</option>
+                  <option value="boolean">Tak/Nie</option>
+                  <option value="enum">Wybór (enum)</option>
+                  <option value="date">Data</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className={labelClass}>
+                  Opcje (JSON array dla enum)
+                </label>
+                <textarea
+                  name="options"
+                  value={form.options}
+                  onChange={handleChange}
+                  className={inputClass}
+                  placeholder='np. ["Mini","Standard","Max"]'
+                  rows={2}
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  name="required"
+                  id="featureRequired"
+                  checked={!!form.required}
+                  onChange={handleChange}
+                  className="w-4 h-4 accent-[#0f9fdf] rounded"
+                />
+                <label
+                  htmlFor="featureRequired"
+                  className="text-sm text-white cursor-pointer"
+                >
+                  Wymagane
+                </label>
+              </div>
+              <div>
+                <label className={labelClass}>Kolejność</label>
+                <input
+                  type="number"
+                  name="order"
+                  value={form.order}
+                  onChange={handleChange}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-6 py-2.5 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-[#1b3caf]/30 transition-all duration-300 disabled:opacity-50 text-sm"
+              >
+                {saving ? "Zapisywanie..." : "Utwórz cechę"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Features List */}
+      <div className="bg-gradient-to-br from-white/[6%] to-white/[2%] border border-white/10 rounded-2xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-emerald-400/10 rounded-lg flex items-center justify-center">
+              <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div>
+              <h3 className="text-white font-semibold">Lista cech</h3>
+              <p className="text-xs text-[#8b92a9]">
+                {features.length} zdefiniowanych
+              </p>
+            </div>
           </div>
         </div>
-      </main>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#1b3caf] border-t-transparent" />
+              <p className="text-[#8b92a9] text-sm">Ładowanie...</p>
+            </div>
+          </div>
+        ) : features.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
+              <Layers className="w-7 h-7 text-[#8b92a9]" />
+            </div>
+            <p className="text-white font-medium mb-1">
+              Brak zdefiniowanych cech
+            </p>
+            <p className="text-[#8b92a9] text-sm">
+              Dodaj cechy, aby definiować dane produktów
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/[6%]">
+            {features.map((f) => (
+              <div
+                key={f.id}
+                className="flex items-center justify-between px-6 py-4 hover:bg-white/[3%] transition-colors group"
+              >
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-400/10 flex items-center justify-center flex-shrink-0">
+                    <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-white font-semibold truncate">
+                        {f.label}
+                      </p>
+                      <span className="text-[10px] text-[#6b7280] bg-white/5 px-2 py-0.5 rounded-full">
+                        {f.key}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-[#8b92a9]">
+                        {typeLabels[f.type] || f.type}
+                      </span>
+                      <span className="text-xs text-[#6b7280]">•</span>
+                      <span className="text-xs text-[#6b7280]">
+                        {f.categoryId
+                          ? `Kategoria: ${f.categoryId}`
+                          : "Globalna"}
+                      </span>
+                      {f.required && (
+                        <>
+                          <span className="text-xs text-[#6b7280]">•</span>
+                          <span className="text-xs text-amber-400">
+                            Wymagane
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0 ml-4">
+                  <Link
+                    href={`/admin/features/${f.id}/edit`}
+                    className="p-2 rounded-lg text-[#8b92a9] hover:text-white hover:bg-white/10 transition-all"
+                    title="Edytuj"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Link>
+                  <button
+                    onClick={() => setDeleteTarget(f)}
+                    className="p-2 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                    title="Usuń"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Usunąć cechę?"
+        message={`Czy na pewno chcesz usunąć cechę „${deleteTarget?.label}"? To działanie jest nieodwracalne.`}
+        confirmLabel="Usuń cechę"
+        variant="danger"
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

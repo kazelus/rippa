@@ -11,7 +11,7 @@ export async function GET(
     await initializeDatabase();
     const { id } = await params;
     const result = await pool.query(
-      'SELECT id, "categoryId", key, label, type, options, required, "order", "createdAt", "updatedAt" FROM "FeatureDefinition" WHERE id = $1',
+      'SELECT id, "categoryId", key, label, type, options, required, "order", "affectsPrice", "priceModifier", "priceModifierType", "isVariant", "variantOptions", "createdAt", "updatedAt" FROM "FeatureDefinition" WHERE id = $1',
       [id],
     );
     if (result.rows.length === 0)
@@ -46,10 +46,15 @@ export async function PUT(
       options = null,
       required = false,
       order = 0,
+      affectsPrice = false,
+      priceModifier = null,
+      priceModifierType = "fixed",
+      isVariant = false,
+      variantOptions = null,
     } = body;
 
     const update = await pool.query(
-      'UPDATE "FeatureDefinition" SET "categoryId" = $1, key = $2, label = $3, type = $4, options = $5, required = $6, "order" = $7, "updatedAt" = NOW() WHERE id = $8 RETURNING id, "categoryId", key, label, type, options, required, "order", "createdAt", "updatedAt"',
+      'UPDATE "FeatureDefinition" SET "categoryId" = $1, key = $2, label = $3, type = $4, options = $5, required = $6, "order" = $7, "affectsPrice" = $8, "priceModifier" = $9, "priceModifierType" = $10, "isVariant" = $11, "variantOptions" = $12, "updatedAt" = NOW() WHERE id = $13 RETURNING id, "categoryId", key, label, type, options, required, "order", "affectsPrice", "priceModifier", "priceModifierType", "isVariant", "variantOptions", "createdAt", "updatedAt"',
       [
         categoryId,
         key,
@@ -58,6 +63,11 @@ export async function PUT(
         options ? JSON.stringify(options) : null,
         required,
         order,
+        !!affectsPrice,
+        priceModifier,
+        priceModifierType,
+        !!isVariant,
+        variantOptions ? JSON.stringify(variantOptions) : null,
         id,
       ],
     );

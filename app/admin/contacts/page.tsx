@@ -1,8 +1,23 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import AdminSettingsNav from "@/components/AdminSettingsNav";
-import { Trash2, Mail, Check, X } from "lucide-react";
+import {
+  Trash2,
+  Mail,
+  X,
+  Eye,
+  EyeOff,
+  ChevronLeft,
+  ChevronRight,
+  Inbox,
+  Clock,
+  CheckCircle2,
+  Search,
+  Send,
+  ExternalLink,
+} from "lucide-react";
+import ConfirmModal from "@/components/ConfirmModal";
+import { showToast } from "@/lib/toast";
 
 interface Contact {
   id: string;
@@ -27,6 +42,8 @@ export default function AdminContactsPage() {
   const [selected, setSelected] = useState<Contact | null>(null);
   const [emails, setEmails] = useState("");
   const [savingEmails, setSavingEmails] = useState(false);
+  const [emailsSaved, setEmailsSaved] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -34,7 +51,6 @@ export default function AdminContactsPage() {
   }, []);
 
   useEffect(() => {
-    // reload when page or filter changes
     fetchData();
   }, [page, filterUnread]);
 
@@ -62,12 +78,18 @@ export default function AdminContactsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Usuń zgłoszenie?")) return;
     const res = await fetch("/api/admin/contacts", {
       method: "DELETE",
       body: JSON.stringify({ id }),
     });
-    if (res.ok) fetchData();
+    if (res.ok) {
+      fetchData();
+      showToast("Zgłoszenie usunięte", "success");
+      if (selected?.id === id) setSelected(null);
+    } else {
+      showToast("Nie udało się usunąć zgłoszenia", "error");
+    }
+    setDeleteTarget(null);
   };
 
   const toggleRead = async (c: Contact) => {
@@ -86,233 +108,327 @@ export default function AdminContactsPage() {
       body: JSON.stringify({ emails }),
     });
     if (res.ok) {
-      // saved
+      setEmailsSaved(true);
+      setTimeout(() => setEmailsSaved(false), 3000);
     }
     setSavingEmails(false);
   };
 
-  const handlePrev = () => {
-    if (page > 1) {
-      setPage((p) => p - 1);
-      setTimeout(fetchData, 0);
-    }
+  const maxPage = Math.max(1, Math.ceil(total / pageSize));
+
+  const topicMap: Record<string, string> = {
+    offer: "Zapytanie o ofertę",
+    service: "Serwis i części",
+    partnership: "Współpraca",
+    other: "Inne",
   };
 
-  const handleNext = () => {
-    const maxPage = Math.max(1, Math.ceil(total / pageSize));
-    if (page < maxPage) {
-      setPage((p) => p + 1);
-      setTimeout(fetchData, 0);
-    }
-  };
+  function timeAgo(dateStr: string) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Przed chwilą";
+    if (mins < 60) return `${mins} min temu`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h temu`;
+    const days = Math.floor(hours / 24);
+    if (days === 1) return "Wczoraj";
+    return `${days} dni temu`;
+  }
 
-  const toggleUnreadFilter = () => {
-    setFilterUnread((v) => !v);
-    setPage(1);
-    setTimeout(fetchData, 0);
-  };
+  const unreadCount = items.filter((c) => !c.read).length;
 
   return (
-    <div>
-      <AdminSettingsNav />
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-white">
+          <p className="text-[#8b92a9] text-sm mb-1">Komunikacja z klientami</p>
+          <h2 className="text-3xl font-bold text-white">
             Zgłoszenia kontaktowe
-          </h1>
-          <p className="text-[#b0b0b0]">
-            Podgląd zapytań ze strony oraz konfiguracja odbiorców maili.
-          </p>
+          </h2>
+        </div>
+        <div className="flex items-center gap-3 text-sm text-[#8b92a9]">
+          <span>{total} zgłoszeń</span>
+          {unreadCount > 0 && (
+            <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full">
+              {unreadCount} nowych
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="mb-6 bg-[#1a1f2e] border border-[#1b3caf]/30 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-white mb-3">
-          Gdzie wysyłać maile (oddziel przecinkami)
-        </h2>
+      {/* Email config */}
+      <div className="bg-gradient-to-br from-white/[6%] to-white/[2%] border border-white/10 rounded-2xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 bg-[#0f9fdf]/10 rounded-lg flex items-center justify-center">
+            <Send className="w-4 h-4 text-[#0f9fdf]" />
+          </div>
+          <div>
+            <h3 className="text-white font-semibold text-sm">
+              Adresy e-mail do powiadomień
+            </h3>
+            <p className="text-xs text-[#8b92a9]">
+              Oddziel przecinkami wielu odbiorców
+            </p>
+          </div>
+        </div>
         <div className="flex gap-3">
           <input
             value={emails}
             onChange={(e) => setEmails(e.target.value)}
-            className="flex-1 px-4 py-2 rounded-lg bg-[#242d3d] border border-[#1b3caf]/30 text-white"
+            className="flex-1 px-4 py-2.5 bg-white/[5%] border border-white/10 rounded-xl text-white placeholder-[#6b7280] focus:outline-none focus:border-[#1b3caf]/50 transition text-sm"
+            placeholder="email1@firma.pl, email2@firma.pl"
           />
           <button
             onClick={saveEmails}
             disabled={savingEmails}
-            className="px-4 py-2 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] rounded-lg text-white"
+            className="px-5 py-2.5 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white text-sm font-semibold rounded-xl hover:shadow-lg hover:shadow-[#1b3caf]/30 transition-all disabled:opacity-50"
           >
-            Zapisz
+            {savingEmails ? "..." : emailsSaved ? "✓ Zapisano" : "Zapisz"}
           </button>
         </div>
       </div>
 
-      <div className="bg-[#1a1f2e] border border-[#1b3caf]/30 rounded-xl overflow-hidden">
-        <div className="p-4 flex items-center justify-between border-b border-[#1b3caf]/20">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={toggleUnreadFilter}
-              className={`px-3 py-1 rounded ${filterUnread ? "bg-[#1b3caf] text-white" : "bg-[#242d3d] text-[#b0b0b0]"}`}
-            >
-              {filterUnread ? "Tylko nieprzeczytane" : "Wszystkie"}
-            </button>
-            <div className="text-sm text-[#b0b0b0]">{total} zgłoszeń</div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrev}
-              className="px-3 py-1 bg-[#242d3d] rounded"
-            >
-              Poprzednia
-            </button>
-            <div className="text-sm text-[#b0b0b0]">{page}</div>
-            <button
-              onClick={handleNext}
-              className="px-3 py-1 bg-[#242d3d] rounded"
-            >
-              Następna
-            </button>
-          </div>
+      {/* Filters + Pagination */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setFilterUnread(false);
+              setPage(1);
+            }}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+              !filterUnread
+                ? "bg-[#1b3caf] text-white shadow-lg shadow-[#1b3caf]/20"
+                : "bg-white/[5%] text-[#8b92a9] border border-white/10 hover:bg-white/[8%] hover:text-white"
+            }`}
+          >
+            Wszystkie
+          </button>
+          <button
+            onClick={() => {
+              setFilterUnread(true);
+              setPage(1);
+            }}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+              filterUnread
+                ? "bg-[#1b3caf] text-white shadow-lg shadow-[#1b3caf]/20"
+                : "bg-white/[5%] text-[#8b92a9] border border-white/10 hover:bg-white/[8%] hover:text-white"
+            }`}
+          >
+            Nieprzeczytane
+          </button>
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => page > 1 && setPage((p) => p - 1)}
+            disabled={page <= 1}
+            className="p-2 rounded-lg bg-white/[5%] border border-white/10 text-[#8b92a9] hover:text-white hover:bg-white/[8%] transition-all disabled:opacity-30"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="text-sm text-[#8b92a9] tabular-nums px-2">
+            {page} / {maxPage}
+          </span>
+          <button
+            onClick={() => page < maxPage && setPage((p) => p + 1)}
+            disabled={page >= maxPage}
+            className="p-2 rounded-lg bg-white/[5%] border border-white/10 text-[#8b92a9] hover:text-white hover:bg-white/[8%] transition-all disabled:opacity-30"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Contacts List */}
+      <div className="bg-gradient-to-br from-white/[6%] to-white/[2%] border border-white/10 rounded-2xl overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-white">Ładowanie...</div>
+          <div className="flex items-center justify-center py-20">
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#1b3caf] border-t-transparent" />
+              <p className="text-[#8b92a9] text-sm">Ładowanie...</p>
+            </div>
+          </div>
         ) : items.length === 0 ? (
-          <div className="p-8 text-center text-[#b0b0b0]">Brak zgłoszeń</div>
+          <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
+              <Inbox className="w-7 h-7 text-[#8b92a9]" />
+            </div>
+            <p className="text-white font-medium mb-1">Brak zgłoszeń</p>
+            <p className="text-[#8b92a9] text-sm">
+              Nowe wiadomości pojawią się tutaj
+            </p>
+          </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[#0f1419] border-b border-[#1b3caf]/20">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white">
-                    Data
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white">
-                    Klient
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white">
-                    Kontakt
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white">
-                    Temat
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white">
-                    Produkt
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white">
-                    Akcje
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1b3caf]/20">
-                {items.map((c) => (
-                  <tr key={c.id} className="hover:bg-[#242d3d] transition">
-                    <td className="px-6 py-4">
-                      <span className="text-[#8b92a9] text-sm">
-                        {new Date(c.createdAt).toLocaleString("pl-PL")}
+          <div className="divide-y divide-white/[6%]">
+            {items.map((c) => (
+              <div
+                key={c.id}
+                className={`px-6 py-4 hover:bg-white/[3%] transition-colors group cursor-pointer ${
+                  !c.read ? "bg-[#1b3caf]/[3%]" : ""
+                }`}
+                onClick={() => setSelected(c)}
+              >
+                <div className="flex items-start gap-3">
+                  {/* Status dot */}
+                  <div className="mt-2 flex-shrink-0">
+                    {!c.read ? (
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50" />
+                    ) : (
+                      <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className={`font-semibold truncate ${!c.read ? "text-white" : "text-[#b0b0b0]"}`}
+                        >
+                          {c.name}
+                        </span>
+                        {c.topic && (
+                          <span className="px-2 py-0.5 bg-white/5 text-[#8b92a9] text-[10px] rounded-full flex-shrink-0 uppercase tracking-wider">
+                            {topicMap[c.topic] || c.topic}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-[#6b7280] flex-shrink-0 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {timeAgo(c.createdAt)}
                       </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-white font-medium">{c.name}</div>
-                      <div className="text-[#b0b0b0] text-sm mt-1">
-                        {c.message.slice(0, 120)}
-                        {c.message.length > 120 ? "..." : ""}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-[#b0b0b0] text-sm">
-                        {c.email}
-                        {c.phone ? " • " + c.phone : ""}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-[#b0b0b0] text-sm">
-                        {(() => {
-                          const map: Record<string, string> = {
-                            offer: "Zapytanie o ofertę",
-                            service: "Serwis i części",
-                            partnership: "Współpraca",
-                            other: "Inne",
-                          };
-                          return c.topic ? (map[c.topic] || c.topic) : "–";
-                        })()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-[#b0b0b0] text-sm">
-                        {c.product?.name || "–"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 flex items-center gap-3">
-                      <button
-                        title="Pokaż"
-                        onClick={() => setSelected(c)}
-                        className="text-[#1b3caf] hover:text-white"
-                      >
-                        <Mail className="w-5 h-5" />
-                      </button>
-                      <button
-                        title="Oznacz jako przeczytane"
-                        onClick={() => toggleRead(c)}
-                        className={`px-2 py-1 rounded ${c.read ? "bg-green-600 text-white" : "bg-[#242d3d] text-[#b0b0b0]"}`}
-                      >
-                        {c.read ? "Przeczytane" : "Oznacz"}
-                      </button>
-                      <button
-                        title="Usuń"
-                        onClick={() => handleDelete(c.id)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                    <p className="text-sm text-[#8b92a9] line-clamp-1 mb-1.5">
+                      {c.message}
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-[#6b7280]">{c.email}</span>
+                      {c.phone && (
+                        <span className="text-xs text-[#6b7280]">
+                          • {c.phone}
+                        </span>
+                      )}
+                      {c.product && (
+                        <span className="text-xs text-[#1b3caf]">
+                          → {c.product.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div
+                    className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() => toggleRead(c)}
+                      className={`p-1.5 rounded-lg transition-all ${c.read ? "text-[#8b92a9] hover:text-emerald-400 hover:bg-emerald-400/10" : "text-emerald-400 hover:bg-emerald-400/10"}`}
+                      title={
+                        c.read
+                          ? "Oznacz jako nieprzeczytane"
+                          : "Oznacz jako przeczytane"
+                      }
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(c)}
+                      className="p-1.5 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                      title="Usuń"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Drawer / Modal */}
+      {/* Modal */}
       {selected && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[#0f1419] p-6 rounded-lg w-full max-w-2xl">
-            <div className="flex items-start justify-between gap-3">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="bg-[#1a1f2e] border border-white/10 p-6 rounded-2xl w-full max-w-2xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 mb-4">
               <div>
                 <h3 className="text-xl font-semibold text-white">
                   {selected.name}
                 </h3>
-                <p className="text-sm text-[#b0b0b0]">
-                  {selected.email}
-                  {selected.phone ? " • " + selected.phone : ""}
-                </p>
-                <p className="text-sm text-[#b0b0b0] mt-1">
-                  {(() => {
-                    const map: Record<string, string> = {
-                      offer: "Zapytanie o ofertę",
-                      service: "Serwis i części",
-                      partnership: "Współpraca",
-                      other: "Inne",
-                    };
-                    return selected.topic ? (map[selected.topic] || selected.topic) : null;
-                  })()}
-                </p>
                 <p className="text-sm text-[#8b92a9] mt-1">
-                  {new Date(selected.createdAt).toLocaleString("pl-PL")}
+                  {selected.email}
+                  {selected.phone ? ` • ${selected.phone}` : ""}
                 </p>
+                <div className="flex items-center gap-2 mt-2">
+                  {selected.topic && (
+                    <span className="px-2.5 py-0.5 bg-white/5 text-[#8b92a9] text-xs rounded-full">
+                      {topicMap[selected.topic] || selected.topic}
+                    </span>
+                  )}
+                  <span className="text-xs text-[#6b7280]">
+                    {new Date(selected.createdAt).toLocaleString("pl-PL")}
+                  </span>
+                </div>
+                {selected.product && (
+                  <p className="text-sm text-[#1b3caf] mt-2">
+                    Produkt: {selected.product.name}
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => setSelected(null)}
-                className="text-[#b0b0b0]"
+                className="p-2 rounded-lg text-[#8b92a9] hover:text-white hover:bg-white/10 transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="mt-4 text-[#d0d8e6] whitespace-pre-line">
+            <div className="mt-4 p-4 bg-white/[3%] border border-white/[6%] rounded-xl text-[#d0d8e6] whitespace-pre-line text-sm leading-relaxed">
               {selected.message}
+            </div>
+            <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/[6%]">
+              <button
+                onClick={() => {
+                  toggleRead(selected);
+                  setSelected(null);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-xl text-sm font-medium hover:bg-emerald-500/20 transition-all"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                {selected.read
+                  ? "Oznacz jako nieprzeczytane"
+                  : "Oznacz jako przeczytane"}
+              </button>
+              <button
+                onClick={() => {
+                  setDeleteTarget(selected);
+                  setSelected(null);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 rounded-xl text-sm font-medium hover:bg-red-500/20 transition-all"
+              >
+                <Trash2 className="w-4 h-4" />
+                Usuń
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Usunąć zgłoszenie?"
+        message={`Czy na pewno chcesz usunąć zgłoszenie od „${deleteTarget?.name}" (${deleteTarget?.email})?`}
+        confirmLabel="Usuń zgłoszenie"
+        variant="danger"
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

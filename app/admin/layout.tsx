@@ -4,6 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { LogOut, ChevronLeft } from "lucide-react";
+import Toasts from "@/components/Toast";
 
 export default function AdminLayout({
   children,
@@ -87,6 +88,7 @@ export default function AdminLayout({
 
       {/* Main Content */}
       <main className="w-full px-4 sm:px-6 lg:px-8 py-12">{children}</main>
+      <Toasts />
     </div>
   );
 }

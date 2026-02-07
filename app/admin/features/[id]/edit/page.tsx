@@ -4,6 +4,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import ConfirmModal from "@/components/ConfirmModal";
+import { showToast } from "@/lib/toast";
 
 export default function EditFeaturePage({
   params,
@@ -17,6 +19,7 @@ export default function EditFeaturePage({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [categories, setCategories] = useState<any[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [form, setForm] = useState({
     categoryId: "",
@@ -116,15 +119,17 @@ export default function EditFeaturePage({
   };
 
   const handleDelete = async () => {
-    if (!confirm("Usuń cechę?")) return;
     try {
       const res = await fetch(`/api/admin/features/${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Delete failed");
+      showToast("Cecha usunięta", "success");
       router.push("/admin/features");
     } catch (err) {
-      alert("Nie udało się usunąć");
+      showToast("Nie udało się usunąć cechy", "error");
+    } finally {
+      setShowDeleteModal(false);
     }
   };
 
@@ -237,6 +242,8 @@ export default function EditFeaturePage({
               />
             </div>
 
+            {/* Warianty cenowe zarządzane na poziomie modelu */}
+
             <div className="flex gap-3 pt-4">
               <button
                 type="submit"
@@ -247,7 +254,7 @@ export default function EditFeaturePage({
               </button>
               <button
                 type="button"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteModal(true)}
                 className="bg-red-600 text-white px-4 py-2 rounded"
               >
                 Usuń
@@ -256,6 +263,16 @@ export default function EditFeaturePage({
           </form>
         </div>
       </main>
+
+      <ConfirmModal
+        open={showDeleteModal}
+        title="Usunąć cechę?"
+        message={`Czy na pewno chcesz usunąć cechę „${form.label}"? To działanie jest nieodwracalne.`}
+        confirmLabel="Usuń cechę"
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
     </div>
   );
 }

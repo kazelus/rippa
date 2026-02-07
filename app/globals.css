@@ -172,3 +172,119 @@ body {
     transparent 100%
   );
 }
+
+/* Rich text section styles for product pages */
+.prose-section ul {
+  list-style-type: none !important;
+  padding-left: 0 !important;
+  margin: 1em 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.6em !important;
+}
+.prose-section ol {
+  list-style-type: none !important;
+  padding-left: 0 !important;
+  margin: 1em 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.6em !important;
+  counter-reset: item;
+}
+.prose-section ul > li {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 0.75em;
+  padding: 0.6em 1em;
+  background: rgba(27, 60, 175, 0.06);
+  border-left: 2px solid rgba(27, 60, 175, 0.4);
+  border-radius: 0 0.5em 0.5em 0;
+  transition: all 0.2s ease;
+}
+.prose-section ul > li:hover {
+  background: rgba(27, 60, 175, 0.12);
+  border-left-color: #1b3caf;
+}
+.prose-section ul > li::before {
+  content: "";
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  margin-top: 0.55em;
+  background: #1b3caf;
+  border-radius: 1px;
+  transform: rotate(45deg);
+}
+.prose-section ol > li {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 0.75em;
+  padding: 0.6em 1em;
+  background: rgba(27, 60, 175, 0.06);
+  border-left: 2px solid rgba(27, 60, 175, 0.4);
+  border-radius: 0 0.5em 0.5em 0;
+  counter-increment: item;
+  transition: all 0.2s ease;
+}
+.prose-section ol > li:hover {
+  background: rgba(27, 60, 175, 0.12);
+  border-left-color: #1b3caf;
+}
+.prose-section ol > li::before {
+  content: counter(item);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5em;
+  height: 1.5em;
+  font-size: 0.75em;
+  font-weight: 700;
+  color: white;
+  background: #1b3caf;
+  border-radius: 0.35em;
+}
+.prose-section h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 1em 0 0.5em;
+  color: white;
+}
+.prose-section h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0.75em 0 0.5em;
+  color: #d0d8e6;
+}
+.prose-section p {
+  margin: 0.5em 0;
+}
+.prose-section blockquote {
+  border-left: 3px solid #1b3caf;
+  padding-left: 1em;
+  margin: 0.75em 0;
+  color: #8b92a9;
+  font-style: italic;
+}
+.prose-section b,
+.prose-section strong {
+  font-weight: 700;
+  color: white;
+}
+.prose-section u {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-section s,
+.prose-section strike {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+.prose-section br {
+  display: block;
+  content: "";
+  margin-top: 0.25em;
+}
+.prose-section div {
+  margin: 0.25em 0;
+}

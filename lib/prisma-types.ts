@@ -38,10 +38,10 @@ export interface Model {
   id: string;
   name: string;
   description: string | null;
-  power: string;
-  depth: string;
-  weight: string;
-  bucket: string;
+  power?: string;
+  depth?: string;
+  weight?: string;
+  bucket?: string;
   price: string;
   featured: boolean;
   adminId: string;

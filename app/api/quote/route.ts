@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendContactNotification } from "@/lib/mailer";
+import {
+  sendContactNotification,
+  sendCustomerConfirmation,
+} from "@/lib/mailer";
+
+interface VariantConfig {
+  groupName: string;
+  optionName: string;
+  priceModifier?: number;
+}
+
+interface QuickSpecConfig {
+  label: string;
+  value: string;
+  unit?: string;
+}
+
+interface ModelConfiguration {
+  variants?: VariantConfig[];
+  quickSpecs?: QuickSpecConfig[];
+  totalPrice?: string;
+}
 
 interface QuoteRequest {
   productId?: string;
@@ -10,6 +31,7 @@ interface QuoteRequest {
   email: string;
   phone?: string;
   message: string;
+  configuration?: ModelConfiguration;
 }
 
 export async function POST(request: NextRequest) {
@@ -61,21 +83,39 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send notification email (best-effort) and include result in response for debugging
-    let mailResult: any = null;
+    // Prepare enriched submission for emails
+    const full = await prisma.contactSubmission.findUnique({
+      where: { id: submission.id },
+      include: { product: { select: { id: true, name: true } } },
+    });
+
+    const enriched = {
+      ...full,
+      topic: body.topic || null,
+      productName: body.productName || full?.product?.name || null,
+      configuration: body.configuration || null,
+    };
+
+    // Send admin notification email (best-effort)
+    let adminMailResult: any = null;
     try {
-      const full = await prisma.contactSubmission.findUnique({
-        where: { id: submission.id },
-        include: { product: { select: { id: true, name: true } } },
-      });
-      if (full) {
-        // pass topic from request into the notification (DB schema may not have topic yet)
-        const withTopic = { ...full, topic: body.topic || null } as any;
-        mailResult = await sendContactNotification(withTopic);
+      if (enriched) {
+        adminMailResult = await sendContactNotification(enriched);
       }
     } catch (e) {
-      console.warn("Failed to send contact notification", e);
-      mailResult = { ok: false, reason: e };
+      console.warn("Failed to send admin notification", e);
+      adminMailResult = { ok: false, reason: String(e) };
+    }
+
+    // Send confirmation email to customer (best-effort)
+    let customerMailResult: any = null;
+    try {
+      if (enriched) {
+        customerMailResult = await sendCustomerConfirmation(enriched);
+      }
+    } catch (e) {
+      console.warn("Failed to send customer confirmation", e);
+      customerMailResult = { ok: false, reason: String(e) };
     }
 
     return NextResponse.json(
@@ -83,8 +123,9 @@ export async function POST(request: NextRequest) {
         success: true,
         id: submission.id,
         message:
-          "Zapytanie zostało zapisane. Wkrótce się z Tobą skontaktujemy.",
-        mailResult,
+          "Zapytanie zostało zapisane. Wysłaliśmy potwierdzenie na Twój email.",
+        mailResult: adminMailResult,
+        customerMailResult,
       },
       { status: 200 },
     );
