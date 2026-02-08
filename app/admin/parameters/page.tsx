@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -87,6 +87,8 @@ export default function ParametersAdminPage() {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
     new Set(),
   );
+
+  const collapsedInitRef = useRef(false);
 
   const [form, setForm] = useState({
     categoryId: "",
@@ -226,6 +228,21 @@ export default function ParametersAdminPage() {
 
     return byCategoryAndGroup;
   }, [filteredParameters, viewMode]);
+
+    // Initialize collapsed state once after groupedParameters is computed
+    useEffect(() => {
+      if (collapsedInitRef.current) return;
+      if (!groupedParameters || groupedParameters.size === 0) return;
+      const allKeys = new Set<string>();
+      groupedParameters.forEach((groups, catKey) => {
+        allKeys.add(`cat_${catKey}`);
+        groups.forEach((_, grpKey) => {
+          allKeys.add(`grp_${catKey}_${grpKey}`);
+        });
+      });
+      setCollapsedGroups(allKeys);
+      collapsedInitRef.current = true;
+    }, [groupedParameters]);
 
   const toggleGroupCollapse = (key: string) => {
     setCollapsedGroups((prev) => {
