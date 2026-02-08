@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
 import { showToast } from "@/lib/toast";
+import LoadingScreen from "@/components/LoadingScreen";
 
 type Tab = "smtp" | "users" | "password";
 
@@ -564,12 +565,7 @@ export default function AdminSettingsPage() {
             </div>
 
             {usersLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#1b3caf] border-t-transparent" />
-                  <p className="text-[#8b92a9] text-sm">Ładowanie...</p>
-                </div>
-              </div>
+              <LoadingScreen message="Ładowanie..." fullScreen={false} />
             ) : users.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center px-6">
                 <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">

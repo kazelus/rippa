@@ -6,11 +6,17 @@ export const pool = new Pool({
 
 export const db = pool;
 
-// Initialize database tables
+// Memoized initializer: avoid running expensive CREATE TABLE/ALTERs on every
+// request. Use a singleton promise so concurrent requests wait for the same
+// initialization rather than re-executing the statements.
+let initPromise: Promise<void> | null = null;
 export async function initializeDatabase() {
-  try {
-    // Create users table
-    await db.query(`
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
+    try {
+      // Create users table
+      await db.query(`
       CREATE TABLE IF NOT EXISTS "User" (
         id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
         name VARCHAR(255),
@@ -228,8 +234,38 @@ export async function initializeDatabase() {
       )
     `);
 
-    console.log("✅ Database tables initialized");
+      // Helpful indexes for admin queries (contact listing/filtering)
+      try {
+        await db.query(
+          `CREATE INDEX IF NOT EXISTS "ContactSubmission_createdAt_idx" ON "ContactSubmission" ("createdAt" DESC)`,
+        );
+        await db.query(
+          `CREATE INDEX IF NOT EXISTS "ContactSubmission_read_idx" ON "ContactSubmission" ("read")`,
+        );
+        // Indexes to speed up model listing and filtering
+        await db.query(
+          `CREATE INDEX IF NOT EXISTS "Model_updatedAt_idx" ON "Model" ("updatedAt" DESC)`,
+        );
+        await db.query(
+          `CREATE INDEX IF NOT EXISTS "Model_categoryId_idx" ON "Model" ("categoryId")`,
+        );
+        await db.query(
+          `CREATE INDEX IF NOT EXISTS "Model_featured_idx" ON "Model" ("featured")`,
+        );
+        await db.query(
+          `CREATE INDEX IF NOT EXISTS "Model_visible_idx" ON "Model" ("visible")`,
+        );
+      } catch (e) {
+        // Indexes may already exist or ContactSubmission may be managed by migrations
+      }
+
+      // console.log("✅ Database tables initialized");
   } catch (error) {
-    console.error("Error initializing database:", error);
+      console.error("Error initializing database:", error);
+      // Clear the initPromise so a subsequent request can retry initialization
+      initPromise = null;
   }
+  })();
+
+  return initPromise;
 }

@@ -7,6 +7,8 @@ import { Button } from "@/components/Button";
 import RichTextEditor from "@/components/RichTextEditor";
 import Link from "next/link";
 
+import LoadingScreen from "@/components/LoadingScreen";
+
 // Add animation styles
 const styles = `
   @keyframes fadeIn {
@@ -404,11 +406,7 @@ export default function EditModelPage({
   };
 
   if (status === "loading" || isLoading || !session) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0f1419] to-[#1a1f2e] flex items-center justify-center">
-        <p className="text-white">Ładowanie...</p>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   const handleChange = (

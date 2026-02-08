@@ -6,21 +6,36 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const page = Number(url.searchParams.get("page") || "1");
-    const pageSize = Number(url.searchParams.get("pageSize") || "20");
+    const requestedPageSize = Number(url.searchParams.get("pageSize") || "20");
+    const MAX_PAGE_SIZE = 100;
+    const pageSize = Math.max(1, Math.min(requestedPageSize || 20, MAX_PAGE_SIZE));
     const unread = url.searchParams.get("unread");
     const where: any = {};
     if (unread === "1" || unread === "true") where.read = false;
 
     const total = await prisma.contactSubmission.count({ where });
+    // Select only metadata fields (no full message) to keep payload small
     const items = await prisma.contactSubmission.findMany({
       where,
       orderBy: { createdAt: "desc" },
       skip: (Math.max(page, 1) - 1) * pageSize,
       take: pageSize,
-      include: { product: { select: { id: true, name: true } } },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        read: true,
+        createdAt: true,
+        topic: true,
+        product: { select: { id: true, name: true } },
+      },
     });
 
-    return NextResponse.json({ items, total, page, pageSize });
+    const res = NextResponse.json({ items, total, page, pageSize });
+    // Admin list pages can be cached in CDN for short time if appropriate
+    res.headers.set("Cache-Control", "private, max-age=0, s-maxage=30, stale-while-revalidate=60");
+    return res;
   } catch (err) {
     console.error("Error fetching contacts", err);
     return NextResponse.json({ error: "Błąd pobierania" }, { status: 500 });

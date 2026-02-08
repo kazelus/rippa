@@ -9,7 +9,10 @@ export async function GET() {
       FROM "Category" 
       ORDER BY "createdAt" DESC
     `);
-    return Response.json(result.rows);
+    const res = Response.json(result.rows);
+    // Safe to cache categories for a short time on CDN
+    res.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    return res;
   } catch (error) {
     console.error("Error fetching categories:", error);
     return Response.json(

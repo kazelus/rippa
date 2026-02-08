@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { LogOut, ChevronLeft } from "lucide-react";
 import Toasts from "@/components/Toast";
+import LoadingScreen from "@/components/LoadingScreen";
 
 export default function AdminLayout({
   children,
@@ -27,11 +28,7 @@ export default function AdminLayout({
   }, [status, router, pathname]);
 
   if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0f1419] to-[#1a1f2e] flex items-center justify-center">
-        <p className="text-white">Ładowanie...</p>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Pokaż stronę logowania nawet jeśli nie zalogowany

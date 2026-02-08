@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import LoadingScreen from "@/components/LoadingScreen";
 
 export default function EditParameterPage({
   params,
@@ -158,11 +159,7 @@ export default function EditParameterPage({
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0f1419] to-[#1a1f2e] flex items-center justify-center">
-        <div className="text-white text-xl">Ładowanie...</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (

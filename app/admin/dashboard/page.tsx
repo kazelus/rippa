@@ -23,6 +23,7 @@ import {
   Inbox,
   ExternalLink,
 } from "lucide-react";
+import LoadingScreen from "@/components/LoadingScreen";
 
 interface ContactSubmission {
   id: string;
@@ -105,12 +106,7 @@ export default function AdminDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-32">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#1b3caf] border-t-transparent" />
-          <p className="text-[#8b92a9] text-sm">Ładowanie dashboardu...</p>
-        </div>
-      </div>
+      <LoadingScreen message="Ładowanie dashboardu..." fullScreen={false} />
     );
   }
 

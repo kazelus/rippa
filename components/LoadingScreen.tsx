@@ -11,12 +11,15 @@ export default function LoadingScreen({
   message = "Ładowanie...",
   fullScreen = true,
 }: LoadingScreenProps) {
+  // Inline fallbacks should not draw a solid dark background so they blend
+  // into the surrounding layout (prevent the 'czarny box' effect). Full
+  // screen mode keeps the dark page background.
+  const containerClass = fullScreen
+    ? "min-h-screen bg-[#080c11] flex items-center justify-center"
+    : "min-h-[40vh] bg-transparent flex items-center justify-center";
+
   return (
-    <div
-      className={`${
-        fullScreen ? "min-h-screen" : "min-h-[40vh]"
-      } bg-[#080c11] flex items-center justify-center`}
-    >
+    <div className={containerClass}>
       <div className="flex flex-col items-center gap-4">
         {/* Dual-ring spinner */}
         <div className="relative w-10 h-10">
