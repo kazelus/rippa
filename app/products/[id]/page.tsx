@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UnifiedNavbar } from "@/components/UnifiedNavbar";
+import { Footer } from "@/components/Footer";
+import LoadingScreen from "@/components/LoadingScreen";
 import {
   ChevronLeft,
   ChevronRight,
@@ -450,14 +452,9 @@ export default function ProductDetailsPage({
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0f1419] via-[#1a1f2e] to-[#0f1419] flex items-center justify-center">
-        <div className="animate-pulse text-center">
-          <div className="w-16 h-16 bg-[#1b3caf]/30 rounded-full mx-auto mb-4"></div>
-          <p className="text-white text-lg">Ładowanie produktu...</p>
-        </div>
-      </div>
-    );
+      return (
+        <LoadingScreen message="Ładowanie produktu..." />
+      );
   }
 
   if (!model) {
@@ -907,8 +904,38 @@ export default function ProductDetailsPage({
 
             {model.parameters && model.parameters.length > 0 ? (
               (() => {
+                const overrides = getParameterOverrides();
+
+                // Filter out parameters with empty values
+                const filledParameters = model.parameters.filter((p: any) => {
+                  const overrideValue = overrides[p.label];
+                  const hasOverride = overrideValue !== undefined;
+                  const val = hasOverride ? overrideValue : p.value;
+                  if (val === null || val === undefined || val === "") return false;
+                  if (typeof val === "string") {
+                    try {
+                      const parsed = JSON.parse(val);
+                      if (parsed === null || parsed === "" || parsed === undefined) return false;
+                    } catch {
+                      // not JSON, use raw
+                    }
+                  }
+                  return true;
+                });
+
+                if (filledParameters.length === 0) {
+                  return (
+                    <div className="text-center py-12">
+                      <p className="text-[#6b7280] text-lg">
+                        Parametry techniczne nie zostały jeszcze zdefiniowane dla tego
+                        modelu.
+                      </p>
+                    </div>
+                  );
+                }
+
                 // Group parameters by 'group' field
-                const grouped = model.parameters.reduce((acc: any, p: any) => {
+                const grouped = filledParameters.reduce((acc: any, p: any) => {
                   const groupName = p.group || "Ogólne";
                   if (!acc[groupName]) acc[groupName] = [];
                   acc[groupName].push(p);
@@ -1013,7 +1040,6 @@ export default function ProductDetailsPage({
 
                     {/* Tab Content */}
                     {(() => {
-                      const overrides = getParameterOverrides();
                       return groupNames.map(
                         (groupName, idx) =>
                           activeParamTab === idx && (
@@ -1501,12 +1527,7 @@ export default function ProductDetailsPage({
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-[#0f1419]/80 border-t border-white/10 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-[#b0b0b0] text-sm">
-          <p>&copy; 2025 Rippa Polska. Wszystkie prawa zastrzeżone.</p>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Lightbox Modal */}
       {lightboxOpen && galleryImageUrl && (

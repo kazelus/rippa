@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { UnifiedNavbar } from "@/components/UnifiedNavbar";
 import { Footer } from "@/components/Footer";
-import { Mail, Phone, MapPin, Clock, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Send, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function ContactPage() {
   const [name, setName] = useState("");
@@ -46,11 +47,9 @@ export default function ContactPage() {
         setError(data?.error || "Błąd serwera podczas wysyłki formularza.");
       } else {
         setSuccess(data?.message || "Wiadomość wysłana pomyślnie.");
-        // Optionally show mailResult for debugging
         if (data?.mailResult && data.mailResult.ok === false) {
           console.warn("mailResult:", data.mailResult);
         }
-        // Clear form
         setName("");
         setPhone("");
         setEmail("");
@@ -65,145 +64,116 @@ export default function ContactPage() {
     }
   };
 
+  const contactInfo = [
+    {
+      icon: Phone,
+      label: "Zadzwoń do nas",
+      value: "+48 787 148 016",
+      sub: "Pon – Pt: 8:00 – 16:00",
+      href: "tel:+48787148016",
+    },
+    {
+      icon: Mail,
+      label: "Napisz do nas",
+      value: "biuro@rippapolska.pl",
+      sub: "Odpowiadamy w ciągu 24h",
+      href: "mailto:biuro@rippapolska.pl",
+    },
+    {
+      icon: MapPin,
+      label: "Odwiedź nas",
+      value: "Sadowa 1, 34-120 Sułkowice",
+      sub: null,
+      href: "https://maps.google.com/?q=Sadowa+1+34-120+Sulkowice",
+    },
+    {
+      icon: Clock,
+      label: "Godziny pracy",
+      value: "Pon – Pt: 8:00 – 16:00",
+      sub: "Sob – Nd: nieczynne",
+      href: null,
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#0f1419] relative overflow-x-hidden selection:bg-[#1b3caf] selection:text-white">
+    <div className="min-h-screen bg-[#080c11] selection:bg-[#1b3caf] selection:text-white">
       <UnifiedNavbar />
 
-      {/* Background Gradients */}
-      <div className="pointer-events-none select-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -top-[20%] -right-[10%] w-[800px] h-[800px] bg-[#1b3caf]/10 rounded-full blur-[100px] opacity-40 animate-pulse-slow" />
-        <div className="absolute top-[40%] -left-[10%] w-[600px] h-[600px] bg-[#0f9fdf]/10 rounded-full blur-[80px] opacity-30 animate-pulse-slow2" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#1b3caf]/20 rounded-full blur-[100px] opacity-40" />
-      </div>
+      <main className="relative z-10 pt-32 pb-24">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-      <main className="w-full relative z-10 pt-32 pb-20">
-        <div className="max-w-[1600px] mx-auto px-6 sm:px-10 lg:px-20">
           {/* Header */}
-          <div className="text-center mb-20">
-            <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">
-              Skontaktuj się z <span className="text-[#1b3caf]">nami</span>
+          <div className="text-center mb-16">
+            <span className="inline-block px-4 py-1.5 mb-4 text-xs font-bold tracking-[0.15em] text-[#0f9fdf] border border-[#1b3caf]/20 rounded-full uppercase bg-[#1b3caf]/5">
+              Kontakt
+            </span>
+            <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
+              Porozmawiajmy o{" "}
+              <span className="bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] bg-clip-text text-transparent">
+                Twoim projekcie
+              </span>
             </h1>
-            <p className="text-[#b0b0b0] text-lg max-w-2xl mx-auto">
+            <p className="text-[#8b92a9] text-lg max-w-xl mx-auto">
               Masz pytania dotyczące naszych maszyn? Chcesz umówić się na
               prezentację? Jesteśmy do Twojej dyspozycji.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
-            {/* Contact Info */}
-            <div className="space-y-12">
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm hover:border-[#1b3caf]/30 transition-colors duration-300">
-                <h3 className="text-2xl font-bold text-white mb-8">
-                  Dane kontaktowe
-                </h3>
-
-                <div className="space-y-8">
-                  <div className="flex items-start gap-4 group">
-                    <div className="w-12 h-12 rounded-xl bg-[#1b3caf]/10 flex items-center justify-center text-[#1b3caf] group-hover:bg-[#1b3caf] group-hover:text-white transition-all duration-300">
-                      <Phone className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="text-[#6b7280] text-sm uppercase font-bold tracking-wider mb-1">
-                        Zadzwoń do nas
-                      </p>
-                      <a
-                        href="tel:+48787148016"
-                        className="text-xl text-white font-medium hover:text-[#1b3caf] transition-colors"
-                      >
-                        +48 787 148 016
-                      </a>
-                      <p className="text-[#b0b0b0] text-sm mt-1">
-                        Pon - Pt: 8:00 - 16:00
-                      </p>
-                    </div>
+          {/* Contact cards row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+            {contactInfo.map((item, i) => {
+              const Inner = (
+                <div className="group h-full p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-[#1b3caf]/25 hover:bg-white/[0.04] transition-all duration-300">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1b3caf]/20 to-[#0f9fdf]/10 flex items-center justify-center text-[#0f9fdf] mb-4 group-hover:from-[#1b3caf]/30 group-hover:to-[#0f9fdf]/20 transition-all">
+                    <item.icon className="w-4.5 h-4.5" />
                   </div>
-
-                  <div className="flex items-start gap-4 group">
-                    <div className="w-12 h-12 rounded-xl bg-[#1b3caf]/10 flex items-center justify-center text-[#1b3caf] group-hover:bg-[#1b3caf] group-hover:text-white transition-all duration-300">
-                      <Mail className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="text-[#6b7280] text-sm uppercase font-bold tracking-wider mb-1">
-                        Napisz do nas
-                      </p>
-                      <a
-                        href="mailto:biuro@rippapolska.pl"
-                        className="text-xl text-white font-medium hover:text-[#1b3caf] transition-colors"
-                      >
-                        biuro@rippapolska.pl
-                      </a>
-                      <p className="text-[#b0b0b0] text-sm mt-1">
-                        Odpowiadamy w ciągu 24h
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4 group">
-                    <div className="w-12 h-12 rounded-xl bg-[#1b3caf]/10 flex items-center justify-center text-[#1b3caf] group-hover:bg-[#1b3caf] group-hover:text-white transition-all duration-300">
-                      <MapPin className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="text-[#6b7280] text-sm uppercase font-bold tracking-wider mb-1">
-                        Odwiedź nas
-                      </p>
-                      <p className="text-xl text-white font-medium">
-                        Mostowa 4
-                      </p>
-                      <p className="text-[#b0b0b0] text-sm mt-1">
-                        34-120 Sułkowice
-                      </p>
-                    </div>
-                  </div>
+                  <p className="text-[#636b82] text-xs font-semibold uppercase tracking-wider mb-1.5">
+                    {item.label}
+                  </p>
+                  <p className="text-white font-medium text-sm mb-0.5">{item.value}</p>
+                  {item.sub && (
+                    <p className="text-[#636b82] text-xs">{item.sub}</p>
+                  )}
                 </div>
-              </div>
+              );
+              return item.href ? (
+                <a key={i} href={item.href} target={item.href.startsWith("http") ? "_blank" : undefined} rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}>
+                  {Inner}
+                </a>
+              ) : (
+                <div key={i}>{Inner}</div>
+              );
+            })}
+          </div>
 
-              {/* Map Placeholder */}
-              <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden h-64 md:h-80 relative group">
-                <iframe
-                  src="https://www.google.com/maps?q=Mostowa+4+34-120+Sulkowice&output=embed"
-                  className="absolute inset-0 w-full h-full border-0"
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Mapa - Mostowa 4, 34-120 Sułkowice"
-                />
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-300 pointer-events-none" />
-              </div>
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
 
-            {/* Contact Form */}
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 md:p-10 backdrop-blur-sm">
-              <h3 className="text-2xl font-bold text-white mb-2">
-                Formularz kontaktowy
+            {/* Form — wider */}
+            <div className="lg:col-span-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 md:p-8">
+              <h3 className="text-xl font-bold text-white mb-1">
+                Wyślij wiadomość
               </h3>
-              <p className="text-[#b0b0b0] mb-8">
-                Wypełnij formularz, a skontaktujemy się z Tobą najszybciej jak
-                to możliwe.
+              <p className="text-[#8b92a9] text-sm mb-8">
+                Wypełnij formularz, a skontaktujemy się najszybciej jak to możliwe.
               </p>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="name"
-                      className="text-sm font-medium text-white"
-                    >
-                      Imię i nazwisko
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <label htmlFor="name" className="text-xs font-semibold text-[#8b92a9] uppercase tracking-wider">
+                      Imię i nazwisko <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="text"
                       id="name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full bg-[#0f1419] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-[#6b7280] focus:outline-none focus:border-[#1b3caf] focus:ring-1 focus:ring-[#1b3caf] transition-all"
+                      className="w-full bg-[#0a0e15] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-[#4a5068] focus:outline-none focus:border-[#1b3caf]/50 focus:ring-1 focus:ring-[#1b3caf]/30 transition-all"
                       placeholder="Jan Kowalski"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="phone"
-                      className="text-sm font-medium text-white"
-                    >
+                  <div className="space-y-1.5">
+                    <label htmlFor="phone" className="text-xs font-semibold text-[#8b92a9] uppercase tracking-wider">
                       Telefon
                     </label>
                     <input
@@ -211,118 +181,108 @@ export default function ContactPage() {
                       id="phone"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="w-full bg-[#0f1419] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-[#6b7280] focus:outline-none focus:border-[#1b3caf] focus:ring-1 focus:ring-[#1b3caf] transition-all"
+                      className="w-full bg-[#0a0e15] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-[#4a5068] focus:outline-none focus:border-[#1b3caf]/50 focus:ring-1 focus:ring-[#1b3caf]/30 transition-all"
                       placeholder="+48 000 000 000"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label
-                    htmlFor="email"
-                    className="text-sm font-medium text-white"
-                  >
-                    Adres e-mail
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-[#0f1419] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-[#6b7280] focus:outline-none focus:border-[#1b3caf] focus:ring-1 focus:ring-[#1b3caf] transition-all"
-                    placeholder="jan@example.com"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <label htmlFor="email" className="text-xs font-semibold text-[#8b92a9] uppercase tracking-wider">
+                      Adres e-mail <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-[#0a0e15] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-[#4a5068] focus:outline-none focus:border-[#1b3caf]/50 focus:ring-1 focus:ring-[#1b3caf]/30 transition-all"
+                      placeholder="jan@example.com"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="topic" className="text-xs font-semibold text-[#8b92a9] uppercase tracking-wider">
+                      Temat
+                    </label>
+                    <select
+                      id="topic"
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      className="w-full bg-[#0a0e15] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#1b3caf]/50 focus:ring-1 focus:ring-[#1b3caf]/30 transition-all appearance-none"
+                    >
+                      <option value="">Wybierz temat</option>
+                      <option value="offer">Zapytanie o ofertę</option>
+                      <option value="service">Serwis i części</option>
+                      <option value="partnership">Współpraca</option>
+                      <option value="other">Inne</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label
-                    htmlFor="topic"
-                    className="text-sm font-medium text-white"
-                  >
-                    Temat
-                  </label>
-                  <select
-                    id="topic"
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                    className="w-full bg-[#0f1419] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#1b3caf] focus:ring-1 focus:ring-[#1b3caf] transition-all appearance-none"
-                  >
-                    <option value="">Wybierz temat rozmowy</option>
-                    <option value="offer">Zapytanie o ofertę</option>
-                    <option value="service">Serwis i części</option>
-                    <option value="partnership">Współpraca</option>
-                    <option value="other">Inne</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    htmlFor="message"
-                    className="text-sm font-medium text-white"
-                  >
-                    Wiadomość
+                <div className="space-y-1.5">
+                  <label htmlFor="message" className="text-xs font-semibold text-[#8b92a9] uppercase tracking-wider">
+                    Wiadomość <span className="text-red-400">*</span>
                   </label>
                   <textarea
                     id="message"
-                    rows={4}
+                    rows={5}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="w-full bg-[#0f1419] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-[#6b7280] focus:outline-none focus:border-[#1b3caf] focus:ring-1 focus:ring-[#1b3caf] transition-all resize-none"
+                    className="w-full bg-[#0a0e15] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-[#4a5068] focus:outline-none focus:border-[#1b3caf]/50 focus:ring-1 focus:ring-[#1b3caf]/30 transition-all resize-none"
                     placeholder="Opisz nam jak możemy Ci pomóc..."
-                  ></textarea>
+                  />
                 </div>
 
-                {error && <p className="text-sm text-red-400">{error}</p>}
-                {success && <p className="text-sm text-green-400">{success}</p>}
+                {error && (
+                  <div className="flex items-center gap-2 text-sm text-red-400 bg-red-400/5 border border-red-400/10 rounded-xl px-4 py-3">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    {error}
+                  </div>
+                )}
+                {success && (
+                  <div className="flex items-center gap-2 text-sm text-emerald-400 bg-emerald-400/5 border border-emerald-400/10 rounded-xl px-4 py-3">
+                    <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                    {success}
+                  </div>
+                )}
 
                 <button
                   type="submit"
                   disabled={submitting}
-                  className={`w-full ${submitting ? "opacity-60 pointer-events-none" : ""} bg-[#1b3caf] hover:bg-[#2850d4] text-white font-bold py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group`}
+                  className={`w-full ${submitting ? "opacity-60 pointer-events-none" : ""} bg-gradient-to-r from-[#1b3caf] to-[#0f4fdf] hover:shadow-lg hover:shadow-[#1b3caf]/25 text-white font-semibold py-3.5 rounded-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2 group text-sm`}
                 >
-                  <span>
-                    {submitting ? "Wysyłanie..." : "Wyślij wiadomość"}
-                  </span>
-                  <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  {submitting ? "Wysyłanie..." : "Wyślij wiadomość"}
+                  <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
 
-                <p className="text-xs text-[#6b7280] text-center mt-4">
-                  Wysyłając formularz akceptujesz naszą politykę prywatności.
+                <p className="text-xs text-[#4a5068] text-center">
+                  Wysyłając formularz akceptujesz naszą{" "}
+                  <Link href="/privacy" className="text-[#0f9fdf] hover:underline">
+                    politykę prywatności
+                  </Link>
+                  .
                 </p>
               </form>
             </div>
+
+            {/* Map */}
+            <div className="lg:col-span-2 rounded-2xl border border-white/[0.06] overflow-hidden h-full min-h-[400px] lg:min-h-0 relative">
+              <iframe
+                src="https://www.google.com/maps?q=Sadowa+1+34-120+Sulkowice&output=embed"
+                className="absolute inset-0 w-full h-full border-0"
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Mapa - Sadowa 1, 34-120 Sułkowice"
+              />
+            </div>
           </div>
+
         </div>
       </main>
 
       <Footer />
-
-      <style jsx global>{`
-        @keyframes pulse-slow {
-          0%,
-          100% {
-            opacity: 0.4;
-          }
-          50% {
-            opacity: 0.2;
-          }
-        }
-        .animate-pulse-slow {
-          animation: pulse-slow 8s infinite;
-        }
-        @keyframes pulse-slow2 {
-          0%,
-          100% {
-            opacity: 0.3;
-          }
-          50% {
-            opacity: 0.15;
-          }
-        }
-        .animate-pulse-slow2 {
-          animation: pulse-slow2 10s infinite;
-        }
-      `}</style>
     </div>
   );
 }

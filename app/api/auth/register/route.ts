@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createUser, getUserByEmail } from "@/lib/services";
 import { initializeDatabase } from "@/lib/db";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    // Only logged-in admins can create new accounts
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Unauthorized — rejestracja dostępna tylko dla adminów" },
+        { status: 401 },
+      );
+    }
+
     // Ensure database tables exist
     await initializeDatabase();
 

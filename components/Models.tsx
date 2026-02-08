@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import LoadingScreen from "./LoadingScreen";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import Link from "next/link";
@@ -51,18 +52,18 @@ export const Models: React.FC = () => {
   const displayedModels = models.slice(0, 3);
 
   if (loading) {
-    return (
-      <section
-        id="models"
-        className="w-full py-32 bg-rippa-dark relative scroll-mt-20 mt-8"
-      >
-        <div className="w-full px-4 sm:px-6 md:px-12 lg:px-20 mx-auto">
-          <div className="text-center">
-            <p className="text-gray-400">Ładowanie modeli...</p>
+      return (
+        <section
+          id="models"
+          className="w-full py-32 bg-rippa-dark relative scroll-mt-20 mt-8"
+        >
+          <div className="w-full px-4 sm:px-6 md:px-12 lg:px-20 mx-auto">
+            <div className="text-center">
+              <LoadingScreen message="Ładowanie modeli..." fullScreen={false} />
+            </div>
           </div>
-        </div>
-      </section>
-    );
+        </section>
+      );
   }
 
   return (

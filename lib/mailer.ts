@@ -214,7 +214,7 @@ export async function sendCustomerConfirmation(submission: any) {
       ? `Potwierdzenie zapytania — ${productName} — Rippa Polska`
       : "Potwierdzenie zapytania — Rippa Polska";
 
-    const text = `Cześć ${submission.name},\n\nDziękujemy za Twoje zapytanie! Otrzymaliśmy Twoją wiadomość i skontaktujemy się z Tobą najszybciej jak to możliwe.\n\n${productName ? `Produkt: ${productName}\n` : ""}${topicLabel ? `Temat: ${topicLabel}\n` : ""}${buildConfigText(submission.configuration)}\nTwoja wiadomość:\n${submission.message}\n\n---\nRippa Polska\nMostowa 4, 34-120 Sułkowice\nTel: +48 787 148 016\nEmail: biuro@rippapolska.pl`;
+    const text = `Cześć ${submission.name},\n\nDziękujemy za Twoje zapytanie! Otrzymaliśmy Twoją wiadomość i skontaktujemy się z Tobą najszybciej jak to możliwe.\n\n${productName ? `Produkt: ${productName}\n` : ""}${topicLabel ? `Temat: ${topicLabel}\n` : ""}${buildConfigText(submission.configuration)}\nTwoja wiadomość:\n${submission.message}\n\n---\nRippa Polska\nSadowa 1, 34-120 Sułkowice\nTel: +48 787 148 016\nEmail: biuro@rippapolska.pl`;
 
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f8f9fa;padding:24px;border-radius:12px;">
@@ -256,7 +256,7 @@ export async function sendCustomerConfirmation(submission: any) {
 
           <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb;text-align:center;">
             <p style="margin:0;font-weight:600;color:#1f2937;">Rippa Polska</p>
-            <p style="margin:4px 0 0;color:#9ca3af;font-size:12px;">Mostowa 4, 34-120 Sułkowice · biuro@rippapolska.pl</p>
+            <p style="margin:4px 0 0;color:#9ca3af;font-size:12px;">Sadowa 1, 34-120 Sułkowice · biuro@rippapolska.pl</p>
           </div>
         </div>
       </div>`;

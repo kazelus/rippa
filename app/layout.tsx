@@ -4,6 +4,7 @@ import { AuthProvider } from "./providers";
 import "./globals.css";
 
 import ChatWidgetClient from "./ChatWidgetClient";
+import CookieBanner from "@/components/CookieBanner";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -29,6 +30,7 @@ export default function RootLayout({
           {children}
           {/* Pokazuj ChatWidget tylko poza panelem admina, także na stronie głównej i kategorii */}
           <ChatWidgetClient />
+          <CookieBanner />
         </AuthProvider>
       </body>
     </html>

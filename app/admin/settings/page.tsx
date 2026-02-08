@@ -15,11 +15,14 @@ import {
   X,
   UserPlus,
   Settings,
+  KeyRound,
+  Lock,
+  RotateCcw,
 } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
 import { showToast } from "@/lib/toast";
 
-type Tab = "smtp" | "users";
+type Tab = "smtp" | "users" | "password";
 
 interface User {
   id: string;
@@ -47,6 +50,19 @@ export default function AdminSettingsPage() {
   const [userError, setUserError] = useState("");
   const [userSuccess, setUserSuccess] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+
+  // --- Password change state ---
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [showCurrentPass, setShowCurrentPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+
+  // --- Reset password state ---
+  const [resetTarget, setResetTarget] = useState<User | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   useEffect(() => {
     fetchSmtp();
@@ -140,6 +156,73 @@ export default function AdminSettingsPage() {
     }
   };
 
+  // --- Change own password ---
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      showToast("Nowe hasło i potwierdzenie nie są takie same", "error");
+      return;
+    }
+    if (newPassword.length < 6) {
+      showToast("Nowe hasło musi mieć minimum 6 znaków", "error");
+      return;
+    }
+    try {
+      setChangingPassword(true);
+      const res = await fetch("/api/admin/users/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Błąd zmiany hasła");
+      }
+      showToast("Hasło zostało zmienione pomyślnie", "success");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      showToast(err.message || "Błąd zmiany hasła", "error");
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  // --- Reset user password (by admin) ---
+  const handleResetPassword = async () => {
+    if (!resetTarget) return;
+    if (resetPassword.length < 6) {
+      showToast("Hasło musi mieć minimum 6 znaków", "error");
+      return;
+    }
+    try {
+      setResettingPassword(true);
+      const res = await fetch(
+        `/api/admin/users/${resetTarget.id}/reset-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ newPassword: resetPassword }),
+        },
+      );
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Błąd resetu hasła");
+      }
+      showToast(
+        `Hasło użytkownika „${resetTarget.name || resetTarget.email}" zostało zresetowane`,
+        "success",
+      );
+      setResetTarget(null);
+      setResetPassword("");
+    } catch (err: any) {
+      showToast(err.message || "Błąd resetu hasła", "error");
+    } finally {
+      setResettingPassword(false);
+    }
+  };
+
   const inputClass =
     "w-full px-4 py-2.5 bg-white/[5%] border border-white/10 rounded-xl text-white placeholder-[#6b7280] focus:outline-none focus:border-[#1b3caf]/50 transition text-sm";
   const labelClass = "block text-sm font-medium text-[#b0b0b0] mb-2";
@@ -147,6 +230,7 @@ export default function AdminSettingsPage() {
   const tabs: { key: Tab; label: string; icon: any }[] = [
     { key: "smtp", label: "Email / SMTP", icon: Server },
     { key: "users", label: "Użytkownicy", icon: Users },
+    { key: "password", label: "Zmiana hasła", icon: KeyRound },
   ];
 
   return (
@@ -530,13 +614,25 @@ export default function AdminSettingsPage() {
                         </div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setDeleteTarget(user)}
-                      className="p-2 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-400/10 transition-all flex-shrink-0"
-                      title="Usuń użytkownika"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => {
+                          setResetTarget(user);
+                          setResetPassword("");
+                        }}
+                        className="p-2 rounded-lg text-amber-400/60 hover:text-amber-400 hover:bg-amber-400/10 transition-all"
+                        title="Resetuj hasło"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteTarget(user)}
+                        className="p-2 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                        title="Usuń użytkownika"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -564,6 +660,197 @@ export default function AdminSettingsPage() {
         onConfirm={() => deleteTarget && handleDeleteUser(deleteTarget.id)}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      {/* ========= PASSWORD TAB ========= */}
+      {tab === "password" && (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-br from-white/[6%] to-white/[2%] border border-white/10 rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <Lock className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold">Zmiana hasła</h3>
+                <p className="text-xs text-[#8b92a9]">
+                  Zmień swoje hasło do panelu administracyjnego
+                </p>
+              </div>
+            </div>
+
+            <form
+              onSubmit={handleChangePassword}
+              className="space-y-4 max-w-md"
+            >
+              <div>
+                <label className={labelClass}>Obecne hasło</label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPass ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className={inputClass + " pr-12"}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPass(!showCurrentPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[#4b5563] hover:text-[#8b92a9] transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showCurrentPass ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className={labelClass}>Nowe hasło</label>
+                <div className="relative">
+                  <input
+                    type={showNewPass ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimum 6 znaków"
+                    className={inputClass + " pr-12"}
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[#4b5563] hover:text-[#8b92a9] transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showNewPass ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className={labelClass}>Potwierdź nowe hasło</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Powtórz nowe hasło"
+                  className={inputClass}
+                  required
+                  minLength={6}
+                />
+                {confirmPassword && newPassword !== confirmPassword && (
+                  <p className="text-red-400 text-xs mt-1.5">
+                    Hasła nie są takie same
+                  </p>
+                )}
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={
+                    changingPassword ||
+                    !currentPassword ||
+                    !newPassword ||
+                    newPassword !== confirmPassword
+                  }
+                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-[#1b3caf]/30 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:hover:scale-100"
+                >
+                  {changingPassword ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      Zapisywanie...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Zmień hasło
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="flex items-start gap-3 px-4 py-3 bg-white/[3%] border border-white/[6%] rounded-xl">
+            <span className="text-lg">🔒</span>
+            <p className="text-[#8b92a9] text-sm">
+              Hasło musi mieć minimum 6 znaków. Po zmianie hasła zostaniesz
+              zalogowany do następnej sesji — nie musisz się przelogowywać od
+              razu.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {resetTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1a1f2e] border border-white/10 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <RotateCcw className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold">Resetuj hasło</h3>
+                <p className="text-xs text-[#8b92a9]">
+                  Użytkownik: {resetTarget.name || resetTarget.email}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className={labelClass}>Nowe hasło</label>
+                <input
+                  type="text"
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                  placeholder="Minimum 6 znaków"
+                  className={inputClass}
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleResetPassword}
+                  disabled={resettingPassword || resetPassword.length < 6}
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-amber-500/30 transition-all duration-300 disabled:opacity-50 text-sm"
+                >
+                  {resettingPassword ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      Resetowanie...
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="w-4 h-4" />
+                      Resetuj hasło
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setResetTarget(null);
+                    setResetPassword("");
+                  }}
+                  className="px-5 py-2.5 bg-white/[5%] border border-white/10 text-[#b0b0b0] hover:text-white hover:bg-white/[8%] font-medium rounded-xl transition-all text-sm"
+                >
+                  Anuluj
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

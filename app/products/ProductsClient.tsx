@@ -12,6 +12,7 @@ import {
   X,
   SlidersHorizontal,
 } from "lucide-react";
+import LoadingScreen from "@/components/LoadingScreen";
 
 interface Category {
   id: string;
@@ -210,12 +211,9 @@ export function ProductsClient() {
       </div>
 
       {/* ─── Products Grid ─── */}
-      {isLoading ? (
-        <div className="text-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1b3caf] mx-auto"></div>
-          <p className="text-[#b0b0b0] mt-4">Ładowanie produktów...</p>
-        </div>
-      ) : filteredModels.length === 0 ? (
+        {isLoading ? (
+          <LoadingScreen message="Ładowanie produktów..." fullScreen={false} />
+        ) : filteredModels.length === 0 ? (
         <div className="text-center py-24">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
             <Search className="w-7 h-7 text-[#8b92a9]" />

@@ -37,34 +37,45 @@ export const Features: React.FC = () => {
   return (
     <section
       id="features"
-      className="w-full py-32 bg-rippa-dark relative scroll-mt-20 mt-8"
+      className="w-full py-28 bg-[#0f1419] relative scroll-mt-20"
     >
+      {/* Subtle top gradient line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#1b3caf]/30 to-transparent" />
+
       <div className="w-full px-4 sm:px-6 md:px-12 lg:px-20 mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-4">
+          <span className="inline-block px-4 py-1.5 mb-4 text-xs font-bold tracking-[0.15em] text-[#0f9fdf] border border-[#1b3caf]/20 rounded-full uppercase bg-[#1b3caf]/5">
+            Dlaczego Rippa?
+          </span>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Dlaczego warto nas wybrać?
           </h2>
-          <div className="w-20 h-1 bg-rippa-blue mx-auto" />
+          <p className="text-[#8b92a9] max-w-xl mx-auto">
+            Łączymy chińską innowacyjność z polskim wsparciem serwisowym
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {features.map((feature) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {features.map((feature, index) => (
             <div
               key={feature.id}
-              className="group p-8 bg-rippa-card border border-rippa-border hover:border-rippa-blue/50 transition-all duration-300 rounded-sm hover:-translate-y-1 relative overflow-hidden"
+              className="group relative p-7 bg-gradient-to-br from-white/[6%] to-white/[2%] border border-white/10 hover:border-[#1b3caf]/40 transition-all duration-500 rounded-2xl hover:-translate-y-2 hover:shadow-xl hover:shadow-[#1b3caf]/10"
+              style={{ animationDelay: `${index * 100}ms` }}
             >
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <feature.icon className="w-24 h-24 text-rippa-blue" />
+              {/* Glow on hover */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#1b3caf]/0 to-[#0f9fdf]/0 group-hover:from-[#1b3caf]/5 group-hover:to-[#0f9fdf]/5 transition-all duration-500" />
+
+              <div className="relative">
+                <div className="w-14 h-14 bg-gradient-to-br from-[#1b3caf]/20 to-[#0f9fdf]/10 rounded-xl flex items-center justify-center mb-5 group-hover:from-[#1b3caf] group-hover:to-[#0f9fdf] group-hover:shadow-lg group-hover:shadow-[#1b3caf]/30 transition-all duration-500">
+                  <feature.icon className="w-6 h-6 text-[#0f9fdf] group-hover:text-white transition-colors duration-500" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2.5 group-hover:text-[#0f9fdf] transition-colors">
+                  {feature.title}
+                </h3>
+                <p className="text-[#8b92a9] text-sm leading-relaxed">
+                  {feature.description}
+                </p>
               </div>
-              <div className="w-12 h-12 bg-rippa-blue/10 rounded flex items-center justify-center mb-6 group-hover:bg-rippa-blue transition-colors">
-                <feature.icon className="w-6 h-6 text-rippa-blue group-hover:text-white transition-colors" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                {feature.description}
-              </p>
             </div>
           ))}
         </div>

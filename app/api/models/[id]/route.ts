@@ -24,57 +24,72 @@ export async function GET(
 
     const model = modelResult.rows[0];
 
-    // Fetch images and sections
-    const imagesResult = await pool.query(
-      'SELECT id, url, alt FROM "Image" WHERE "modelId" = $1 ORDER BY "createdAt" DESC',
-      [id],
-    );
+    // Fetch all related data in parallel
+    const [imagesResult, sectionsResult, downloadsResult, featuresResult, parametersResult, variantGroupsResult, accessoriesResult] = await Promise.all([
+      pool.query(
+        'SELECT id, url, alt FROM "Image" WHERE "modelId" = $1 ORDER BY "createdAt" DESC',
+        [id],
+      ),
+      pool.query(
+        'SELECT id, title, text, "imageUrl", "imageAlt" FROM "Section" WHERE "modelId" = $1 ORDER BY "order" ASC',
+        [id],
+      ),
+      pool.query(
+        'SELECT id, name, url, "fileType", "fileSize" FROM "Download" WHERE "modelId" = $1 ORDER BY "createdAt" DESC',
+        [id],
+      ),
+      pool.query(
+        `SELECT fd.id as feature_id, fd.key, fd.label, fd.type, fd.options, fd."affectsPrice", fd."priceModifier", fd."priceModifierType", fd."isVariant", fd."variantOptions", pfv.value
+         FROM "ProductFeatureValue" pfv
+         JOIN "FeatureDefinition" fd ON pfv."featureId" = fd.id
+         WHERE pfv."productId" = $1`,
+        [id],
+      ),
+      pool.query(
+        `SELECT pd.id as parameter_id, pd.key, pd.label, pd.type, pd.unit, pd.options, pd."group", pd."affectsPrice", pd."priceModifier", pd."priceModifierType", pd."isVariant", pd."variantOptions", pd."isQuickSpec", pd."quickSpecOrder", pd."quickSpecLabel", ppv.value
+         FROM "ProductParameterValue" ppv
+         JOIN "ParameterDefinition" pd ON ppv."parameterId" = pd.id
+         WHERE ppv."productId" = $1
+         ORDER BY pd."order" ASC`,
+        [id],
+      ),
+      pool.query(
+        'SELECT * FROM "ModelVariantGroup" WHERE "modelId" = $1 ORDER BY "order" ASC, "createdAt" ASC',
+        [id],
+      ),
+      pool.query(
+        `SELECT DISTINCT m.id, m.name, m.description, m.price,
+                (SELECT url FROM "Image" WHERE "modelId" = m.id ORDER BY "createdAt" DESC LIMIT 1) as "imageUrl"
+         FROM "ModelAccessory" ma
+         JOIN "Model" m ON (
+           (ma."parentModelId" = $1 AND m.id = ma."accessoryModelId")
+           OR
+           (ma."accessoryModelId" = $1 AND m.id = ma."parentModelId")
+         )
+         WHERE m.id != $1 AND COALESCE(m.visible, true) = true
+         ORDER BY m.name ASC`,
+        [id],
+      ),
+    ]);
 
-    const sectionsResult = await pool.query(
-      'SELECT id, title, text, "imageUrl", "imageAlt" FROM "Section" WHERE "modelId" = $1 ORDER BY "order" ASC',
-      [id],
-    );
-
-    const downloadsResult = await pool.query(
-      'SELECT id, name, url, "fileType", "fileSize" FROM "Download" WHERE "modelId" = $1 ORDER BY "createdAt" DESC',
-      [id],
-    );
-
-    // Fetch product feature values (join with definitions)
-    const featuresResult = await pool.query(
-      `SELECT fd.id as feature_id, fd.key, fd.label, fd.type, fd.options, fd."affectsPrice", fd."priceModifier", fd."priceModifierType", fd."isVariant", fd."variantOptions", pfv.value
-       FROM "ProductFeatureValue" pfv
-       JOIN "FeatureDefinition" fd ON pfv."featureId" = fd.id
-       WHERE pfv."productId" = $1`,
-      [id],
-    );
-
-    // Fetch product parameter values (join with definitions)
-    const parametersResult = await pool.query(
-      `SELECT pd.id as parameter_id, pd.key, pd.label, pd.type, pd.unit, pd.options, pd."group", pd."affectsPrice", pd."priceModifier", pd."priceModifierType", pd."isVariant", pd."variantOptions", pd."isQuickSpec", pd."quickSpecOrder", pd."quickSpecLabel", ppv.value
-       FROM "ProductParameterValue" ppv
-       JOIN "ParameterDefinition" pd ON ppv."parameterId" = pd.id
-       WHERE ppv."productId" = $1
-       ORDER BY pd."order" ASC`,
-      [id],
-    );
-
-    // Fetch model variant groups + options
-    const variantGroupsResult = await pool.query(
-      'SELECT * FROM "ModelVariantGroup" WHERE "modelId" = $1 ORDER BY "order" ASC, "createdAt" ASC',
-      [id],
-    );
-    const variantGroups = [];
-    for (const group of variantGroupsResult.rows) {
+    // Fetch variant options in one batch query
+    const groupIds = variantGroupsResult.rows.map((g: any) => g.id);
+    let allVariantOptions: any[] = [];
+    if (groupIds.length > 0) {
       const optionsResult = await pool.query(
-        'SELECT * FROM "ModelVariantOption" WHERE "groupId" = $1 ORDER BY "order" ASC, "createdAt" ASC',
-        [group.id],
+        'SELECT * FROM "ModelVariantOption" WHERE "groupId" = ANY($1) ORDER BY "order" ASC, "createdAt" ASC',
+        [groupIds],
       );
-      variantGroups.push({
-        id: group.id,
-        name: group.name,
-        order: group.order,
-        options: optionsResult.rows.map((o: any) => ({
+      allVariantOptions = optionsResult.rows;
+    }
+
+    const variantGroups = variantGroupsResult.rows.map((group: any) => ({
+      id: group.id,
+      name: group.name,
+      order: group.order,
+      options: allVariantOptions
+        .filter((o: any) => o.groupId === group.id)
+        .map((o: any) => ({
           id: o.id,
           name: o.name,
           priceModifier: parseFloat(o.priceModifier) || 0,
@@ -82,26 +97,10 @@ export async function GET(
           images: o.images || null,
           parameterOverrides: o.parameterOverrides || null,
         })),
-      });
-    }
+    }));
 
-    // Fetch linked accessories (models linked via ModelAccessory in BOTH directions)
-    // Only show accessories that are visible (not hidden from the store)
-    const accessoriesResult = await pool.query(
-      `SELECT DISTINCT m.id, m.name, m.description, m.price,
-              (SELECT url FROM "Image" WHERE "modelId" = m.id ORDER BY "createdAt" DESC LIMIT 1) as "imageUrl"
-       FROM "ModelAccessory" ma
-       JOIN "Model" m ON (
-         (ma."parentModelId" = $1 AND m.id = ma."accessoryModelId")
-         OR
-         (ma."accessoryModelId" = $1 AND m.id = ma."parentModelId")
-       )
-       WHERE m.id != $1 AND COALESCE(m.visible, true) = true
-       ORDER BY m.name ASC`,
-      [id],
-    );
-
-    return NextResponse.json({
+    // Cache public single-model responses
+    const response = NextResponse.json({
       ...model,
       images: imagesResult.rows,
       sections: sectionsResult.rows.map((s: any) => ({
@@ -160,6 +159,8 @@ export async function GET(
         imageUrl: a.imageUrl,
       })),
     });
+    response.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    return response;
   } catch (error) {
     console.error("[MODEL_GET]", error);
     return NextResponse.json(
@@ -537,14 +538,20 @@ export async function DELETE(
       [id],
     );
 
-    // Delete images from filesystem
+    // Delete images from filesystem ONLY if no other model uses the same file
     for (const image of images.rows) {
-      const filename = image.url.replace("/uploads/", "");
-      const filepath = path.join(process.cwd(), "public", "uploads", filename);
-      try {
-        await fs.unlink(filepath);
-      } catch {
-        // File might not exist, continue
+      const otherUsage = await pool.query(
+        'SELECT COUNT(*)::int as cnt FROM "Image" WHERE url = $1 AND "modelId" != $2',
+        [image.url, id],
+      );
+      if (otherUsage.rows[0].cnt === 0) {
+        const filename = image.url.replace("/uploads/", "");
+        const filepath = path.join(process.cwd(), "public", "uploads", filename);
+        try {
+          await fs.unlink(filepath);
+        } catch {
+          // File might not exist, continue
+        }
       }
     }
 

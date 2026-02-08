@@ -15,6 +15,7 @@ import {
   Search,
   Star,
   ImageIcon,
+  Copy,
 } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
 import { showToast } from "@/lib/toast";
@@ -46,6 +47,7 @@ export default function ModelsPage() {
     "all" | "visible" | "hidden" | "featured"
   >("all");
   const [deleteTarget, setDeleteTarget] = useState<Model | null>(null);
+  const [cloning, setCloning] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/admin");
@@ -97,6 +99,23 @@ export default function ModelsPage() {
       }
     } catch (err) {
       console.error("Error toggling visibility:", err);
+    }
+  };
+
+  const handleClone = async (model: Model) => {
+    try {
+      setCloning(model.id);
+      const res = await fetch(`/api/models/${model.id}/clone`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Nie udało się skopiować modelu");
+      const cloned = await res.json();
+      showToast(`Model „${model.name}" został skopiowany`, "success");
+      router.push(`/admin/models/${cloned.id}/edit`);
+    } catch (err: any) {
+      showToast(err.message || "Nie udało się skopiować modelu", "error");
+    } finally {
+      setCloning(null);
     }
   };
 
@@ -318,6 +337,16 @@ export default function ModelsPage() {
                           ) : (
                             <EyeOff className="w-4 h-4" />
                           )}
+                        </button>
+                        <button
+                          onClick={() => handleClone(model)}
+                          disabled={cloning === model.id}
+                          className="p-2 rounded-lg text-[#8b92a9] hover:text-[#0f9fdf] hover:bg-[#0f9fdf]/10 transition-all disabled:opacity-40"
+                          title="Kopiuj model"
+                        >
+                          <Copy
+                            className={`w-4 h-4 ${cloning === model.id ? "animate-pulse" : ""}`}
+                          />
                         </button>
                         <Link
                           href={`/admin/models/${model.id}/edit`}

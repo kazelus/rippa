@@ -3,6 +3,8 @@
 import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { UnifiedNavbar } from "@/components/UnifiedNavbar";
+import { Footer } from "@/components/Footer";
+import LoadingScreen from "@/components/LoadingScreen";
 
 // Helper to parse JSON-stored parameter/feature values
 function parseValue(val: any): any {
@@ -114,15 +116,14 @@ export default function ComparePage() {
   })();
 
   if (loading)
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0f1419] to-[#1a1f2e] text-white">
-        <UnifiedNavbar />
-        <div className="max-w-4xl mx-auto pt-32 p-8 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1b3caf] mx-auto" />
-          <p className="text-[#b0b0b0] mt-4">Ładowanie porównania...</p>
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-[#0f1419] to-[#1a1f2e] text-white">
+          <UnifiedNavbar />
+          <div className="max-w-4xl mx-auto pt-32 p-8 text-center">
+            <LoadingScreen message="Ładowanie porównania..." fullScreen={false} />
+          </div>
         </div>
-      </div>
-    );
+      );
 
   if (items.length === 0)
     return (
@@ -369,6 +370,7 @@ export default function ComparePage() {
           </Link>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
