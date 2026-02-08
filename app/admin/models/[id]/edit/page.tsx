@@ -406,7 +406,7 @@ export default function EditModelPage({
   };
 
   if (status === "loading" || isLoading || !session) {
-    return <LoadingScreen />;
+    return <LoadingScreen fullScreen={false} message="Ładowanie modelu..." />;
   }
 
   const handleChange = (

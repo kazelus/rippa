@@ -6,6 +6,7 @@ import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/Button";
 import RichTextEditor from "@/components/RichTextEditor";
 import Link from "next/link";
+import LoadingScreen from "@/components/LoadingScreen";
 
 // Add animation styles
 const styles = `
@@ -245,11 +246,7 @@ export default function AddModelPage() {
   };
 
   if (status === "loading" || !session) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0f1419] to-[#1a1f2e] flex items-center justify-center">
-        <p className="text-white">Ładowanie...</p>
-      </div>
-    );
+    return <LoadingScreen fullScreen={false} message="Ładowanie..." />;
   }
 
   const handleChange = (
