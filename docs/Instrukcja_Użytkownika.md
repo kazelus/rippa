@@ -71,3 +71,80 @@ Widoczność i statusy:
 ---
 
 Plik ten jest podstawowym przewodnikiem dla użytkownika końcowego. Mogę rozszerzyć instrukcję o zrzuty ekranów, opis każdego pola formularza lub zrobić krótkie checklisty krok‑po‑kroku — chcesz, żeby dodać zrzuty ekranu i instrukcje krok‑po‑kroku dla `Dodaj model` i `Edytuj model`?
+
+## Dodaj model — instrukcja krok po kroku
+
+Poniżej znajdziesz szczegółową instrukcję dodawania nowego modelu (produktu). W dokumencie umieszczono też miejsca na zrzuty ekranu — możesz wstawić pliki do `docs/screenshots/`.
+
+1. Przejdź do `Modele` → kliknij przycisk `Nowy model`.
+2. Sekcja `Podstawowe`:
+  - `Nazwa`: wpisz nazwę modelu.
+  - `Opis`: krótki opis wyświetlany w katalogu.
+  - `Cena`: wartość liczby w PLN (bez formatowania), np. `123000` lub z kropkami/spacingiem — system zapisze jako tekst.
+  - `Kategoria`: wybierz kategorię z listy (opcjonalne). Kategoria wpływa na dostępne parametry i cechy.
+  - `Widoczność`: włącz, jeśli model ma być widoczny publicznie.
+  - `Bestseller (Featured)`: zaznacz, jeśli chcesz wyróżnić model.
+
+  ![Zrzut ekranu: Dodaj - Podstawowe](docs/screenshots/add-model-basic.png)
+
+3. Sekcja `Cechy & Parametry`:
+  - Wybierz wartości dla zdefiniowanych cech (checkbox/y, text, select) zależnie od typu cechy.
+  - Wprowadź wartości parametrów (np. moc, waga) — pola mogą mieć jednostki.
+
+  ![Zrzut ekranu: Dodaj - Cechy i Parametry](docs/screenshots/add-model-features.png)
+
+4. Sekcja `Zdjęcia`:
+  - Dodaj jedno lub więcej zdjęć (drag & drop lub wybierz pliki).
+  - Po przesłaniu wybierz zdjęcie „hero” (główne) z listy przesłanych zdjęć.
+  - Uwaga: maks. rozmiar pliku ~20 MB (walidacja po stronie klienta).
+
+  ![Zrzut ekranu: Dodaj - Zdjęcia](docs/screenshots/add-model-images.png)
+
+5. Sekcja `Sekcje`:
+  - Dodaj bloki opisowe z tytułem i tekstem. Możesz także dodać obraz do sekcji.
+
+  ![Zrzut ekranu: Dodaj - Sekcje](docs/screenshots/add-model-sections.png)
+
+6. Sekcja `Pliki`:
+  - Dodaj pliki do pobrania (np. instrukcje PDF). Po przesłaniu plik pojawi się na liście.
+
+  ![Zrzut ekranu: Dodaj - Pliki](docs/screenshots/add-model-files.png)
+
+7. Sekcja `Warianty`:
+  - Zdefiniuj grupy wariantów (np. kolor) i ich opcje.
+  - Dla każdej opcji możesz podać modyfikator ceny i zestaw nadpisanych parametrów.
+
+  ![Zrzut ekranu: Dodaj - Warianty](docs/screenshots/add-model-variants.png)
+
+8. Sekcja `Akcesoria`:
+  - Powiąż inne modele jako akcesoria (lista wyboru) — przydatne przy upsellingu.
+
+9. Zapisz formularz — po udanym zapisie nastąpi przekierowanie na Dashboard.
+
+### Checklist — szybkie kroki
+- Przegląd pól w `Podstawowe` (nazwa, cena, widoczność)
+- Dodaj min. jedno zdjęcie + ustaw hero
+- Uzupełnij cechy i parametry
+- Dodaj sekcje/pliki/warianty jeśli potrzebne
+- Zapisz
+
+## Edytuj model — instrukcja krok po kroku
+
+1. Przejdź do `Modele` → wybierz model i kliknij `Edytuj` (lub otwórz `/admin/models/{id}/edit`).
+2. Formularz edycji ma te same sekcje co formularz dodawania (`Podstawowe`, `Cechy & Parametry`, `Zdjęcia`, `Sekcje`, `Pliki`, `Warianty`, `Akcesoria`).
+3. Edytuj potrzebne pola i kliknij `Zapisz`.
+4. Po zapisaniu zmiany zostaną zastosowane natychmiast (aplikacja przekieruje lub wyświetli potwierdzenie).
+
+  ![Zrzut ekranu: Edytuj - Formularz](docs/screenshots/edit-model-form.png)
+
+### Najważniejsze wskazówki przy edycji
+- Jeżeli chcesz zmienić główne zdjęcie — ustaw nowe jako `hero` po przesłaniu.
+- Przy zmianie wariantów sprawdź, czy mapowane ceny i nadpisane parametry są poprawne.
+- Jeśli potrzebujesz przenieść model do innej kategorii, pamiętaj, że dostępne parametry/cechy mogą się zmienić.
+
+---
+
+Jeśli chcesz, mogę:
+- Wstawić rzeczywiste zrzuty ekranu — prześlij je do `docs/screenshots/` lub pozwól, żebym zrobił zrzuty lokalnie i dodał je tutaj.
+- Wygenerować PDF z instrukcją (zrobię to za chwilę).
+
