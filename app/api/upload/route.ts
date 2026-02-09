@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { put } from "@vercel/blob";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 export async function POST(req: NextRequest) {
   try {
@@ -53,11 +54,42 @@ export async function POST(req: NextRequest) {
     // Generate unique filename
     const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}-${file.name}`;
 
-    // Check if we have Blob token (production) or use local storage (development)
+    // Prefer S3 if configured
+    const s3Bucket = process.env.S3_BUCKET;
+    if (s3Bucket) {
+      // Upload to S3
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      const s3 = new S3Client({
+        region: process.env.S3_REGION,
+        credentials: process.env.AWS_ACCESS_KEY_ID
+          ? {
+              accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
+              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
+            }
+          : undefined,
+      });
+
+      const putCmd = new PutObjectCommand({
+        Bucket: s3Bucket,
+        Key: filename,
+        Body: buffer,
+        ContentType: file.type,
+        ACL: "public-read",
+      });
+
+      await s3.send(putCmd);
+
+      const url = `https://${s3Bucket}.s3.${process.env.S3_REGION}.amazonaws.com/${encodeURIComponent(filename)}`;
+      return NextResponse.json({ success: true, url, filename }, { status: 201 });
+    }
+
+    // Check if we have Blob token (Vercel Blob) or use local storage (development)
     const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
 
     if (blobToken) {
-      // Production: Upload to Vercel Blob
+      // Production (Vercel): Upload to Vercel Blob
       const blob = await put(filename, file, {
         access: "public",
       });
