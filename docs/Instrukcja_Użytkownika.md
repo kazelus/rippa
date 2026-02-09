@@ -85,36 +85,36 @@ Poniżej znajdziesz szczegółową instrukcję dodawania nowego modelu (produktu
   - `Widoczność`: włącz, jeśli model ma być widoczny publicznie.
   - `Bestseller (Featured)`: zaznacz, jeśli chcesz wyróżnić model.
 
-  ![Zrzut ekranu: Dodaj - Podstawowe](docs/screenshots/add-model-basic.svg)
+  ![Zrzut ekranu: Dodaj - Podstawowe](docs/screenshots/real-add-model.png)
 
 3. Sekcja `Cechy & Parametry`:
   - Wybierz wartości dla zdefiniowanych cech (checkbox/y, text, select) zależnie od typu cechy.
   - Wprowadź wartości parametrów (np. moc, waga) — pola mogą mieć jednostki.
 
-  ![Zrzut ekranu: Dodaj - Cechy i Parametry](docs/screenshots/add-model-features.svg)
+  ![Zrzut ekranu: Dodaj - Cechy i Parametry](docs/screenshots/real-add-model.png)
 
 4. Sekcja `Zdjęcia`:
   - Dodaj jedno lub więcej zdjęć (drag & drop lub wybierz pliki).
   - Po przesłaniu wybierz zdjęcie „hero” (główne) z listy przesłanych zdjęć.
   - Uwaga: maks. rozmiar pliku ~20 MB (walidacja po stronie klienta).
 
-  ![Zrzut ekranu: Dodaj - Zdjęcia](docs/screenshots/add-model-images.svg)
+  ![Zrzut ekranu: Dodaj - Zdjęcia](docs/screenshots/real-add-model.png)
 
 5. Sekcja `Sekcje`:
   - Dodaj bloki opisowe z tytułem i tekstem. Możesz także dodać obraz do sekcji.
 
-  ![Zrzut ekranu: Dodaj - Sekcje](docs/screenshots/add-model-sections.svg)
+  ![Zrzut ekranu: Dodaj - Sekcje](docs/screenshots/real-add-model.png)
 
 6. Sekcja `Pliki`:
   - Dodaj pliki do pobrania (np. instrukcje PDF). Po przesłaniu plik pojawi się na liście.
 
-  ![Zrzut ekranu: Dodaj - Pliki](docs/screenshots/add-model-files.svg)
+  ![Zrzut ekranu: Dodaj - Pliki](docs/screenshots/real-add-model.png)
 
 7. Sekcja `Warianty`:
   - Zdefiniuj grupy wariantów (np. kolor) i ich opcje.
   - Dla każdej opcji możesz podać modyfikator ceny i zestaw nadpisanych parametrów.
 
-  ![Zrzut ekranu: Dodaj - Warianty](docs/screenshots/add-model-variants.svg)
+  ![Zrzut ekranu: Dodaj - Warianty](docs/screenshots/real-add-model.png)
 
 8. Sekcja `Akcesoria`:
   - Powiąż inne modele jako akcesoria (lista wyboru) — przydatne przy upsellingu.
@@ -135,7 +135,13 @@ Poniżej znajdziesz szczegółową instrukcję dodawania nowego modelu (produktu
 3. Edytuj potrzebne pola i kliknij `Zapisz`.
 4. Po zapisaniu zmiany zostaną zastosowane natychmiast (aplikacja przekieruje lub wyświetli potwierdzenie).
 
-  ![Zrzut ekranu: Edytuj - Formularz](docs/screenshots/edit-model-form.svg)
+  ![Zrzut ekranu: Edytuj - Formularz](docs/screenshots/real-edit-model.png)
+
+> Dodatkowo: lista modeli i dashboard:
+
+![Zrzut ekranu: Lista modeli](docs/screenshots/real-models-list.png)
+
+![Zrzut ekranu: Dashboard](docs/screenshots/real-dashboard.png)
 
 ### Najważniejsze wskazówki przy edycji
 - Jeżeli chcesz zmienić główne zdjęcie — ustaw nowe jako `hero` po przesłaniu.
