@@ -23,7 +23,7 @@ import {
   FileText,
   Package,
 } from "lucide-react";
-import ChatWidget from "@/components/ChatWidget";
+
 
 interface Section {
   title: string;
@@ -856,26 +856,27 @@ export default function ProductDetailsPage({
               </div>
 
               {/* Contact Info Card */}
-              <div className="bg-gradient-to-br from-white/5 to-white/[2%] p-6 rounded-xl border border-white/10 hover:border-white/20 transition">
-                <h3 className="text-white font-bold mb-4 text-lg">
-                  Potrzebujesz poradnika?
-                </h3>
-                <div className="space-y-2">
-                  <a
-                    href="tel:+48787148016"
-                    className="flex items-center gap-2 text-[#b0b0b0] hover:text-white transition text-sm"
-                  >
-                    <Phone className="w-4 h-4 text-[#1b3caf] flex-shrink-0" />
-                    +48 787 148 016
+              <div className="relative p-6 rounded-2xl border border-white/10 bg-gradient-to-br from-white/[7%] to-white/[2%] backdrop-blur-sm">
+                <div className="absolute -inset-px rounded-2xl pointer-events-none" />
+                <h3 className="text-white font-bold mb-2 text-lg">Potrzebujesz pomocy?</h3>
+                <p className="text-[#8b92a9] text-sm mb-4">Skontaktuj się z nami — pomożemy z wyceną i finansowaniem.</p>
+
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <a href="tel:+48787148016" className="flex items-center gap-3 px-3 py-2 rounded-lg bg-transparent hover:bg-white/5 transition text-white font-medium border border-white/6">
+                    <Phone className="w-4 h-4 text-[#1b3caf]" />
+                    <span className="text-sm">+48 787 148 016</span>
                   </a>
-                  <a
-                    href="mailto:info@rippa.pl"
-                    className="flex items-center gap-3 text-[#b0b0b0] hover:text-white transition"
-                  >
-                    <Mail className="w-5 h-5 text-[#1b3caf]" />
-                    info@rippa.pl
+                  <a href="mailto:info@rippa.pl" className="flex items-center gap-3 px-3 py-2 rounded-lg bg-transparent hover:bg-white/5 transition text-white font-medium border border-white/6">
+                    <Mail className="w-4 h-4 text-[#1b3caf]" />
+                    <span className="text-sm">info@rippa.pl</span>
                   </a>
                 </div>
+
+                <button
+                  onClick={() => setQuoteModalOpen(true)}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white font-semibold rounded-lg hover:scale-105 transition">
+                  Wyślij zapytanie
+                </button>
               </div>
             </div>
           </div>
@@ -1473,7 +1474,7 @@ export default function ProductDetailsPage({
                 </p>
 
                 {/* Contact Options Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                   {/* Phone */}
                   <a
                     href="tel:+48787148016"
@@ -1498,20 +1499,7 @@ export default function ProductDetailsPage({
                     </span>
                   </a>
 
-                  {/* Chat */}
-                  <div className="group flex flex-col items-center p-6 bg-gradient-to-br from-[#1b3caf]/20 to-[#0f9fdf]/20 border border-[#1b3caf]/40 rounded-xl hover:border-[#1b3caf] hover:from-[#1b3caf]/30 hover:to-[#0f9fdf]/30 transition duration-300 cursor-pointer">
-                    <div className="w-8 h-8 text-[#1b3caf] mb-3 group-hover:scale-110 transition">
-                      <svg fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
-                      </svg>
-                    </div>
-                    <span className="text-sm text-[#8b92a9] mb-1">
-                      Chat na żywo
-                    </span>
-                    <span className="text-lg font-semibold text-white">
-                      Porozmawiaj z nami
-                    </span>
-                  </div>
+                  {/* (Chat removed) */}
                 </div>
 
                 {/* Main Button */}
@@ -1594,8 +1582,7 @@ export default function ProductDetailsPage({
         </div>
       )}
 
-      {/* Chat Widget Button - always visible */}
-      <ChatWidget phone="+48787148016" />
+      {/* Chat Widget removed from product page */}
 
       {/* Quote Modal */}
       {quoteModalOpen && (

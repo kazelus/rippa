@@ -12,7 +12,7 @@ import { Footer } from "@/components/Footer";
 
 export default function Home() {
   return (
-    <>
+    <div className="home-bg-override">
       <UnifiedNavbar />
       <Hero />
       <Features />
@@ -22,6 +22,6 @@ export default function Home() {
       <Stats />
       <Service />
       <Footer />
-    </>
+    </div>
   );
 }
