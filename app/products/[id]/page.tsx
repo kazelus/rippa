@@ -451,6 +451,15 @@ export default function ProductDetailsPage({
     }
   };
 
+  const handleEmailClick = () => {
+    if (!model) return;
+    const subject = `Zapytanie o ${model.name}`;
+    const body = `Proszę o wycenę dla modelu ${model.name} (ID: ${model.id}).\nLink: ${window.location.href}\n\nDodatkowe informacje:`;
+    window.location.href = `mailto:info@rippa.pl?subject=${encodeURIComponent(
+      subject,
+    )}&body=${encodeURIComponent(body)}`;
+  };
+
   if (isLoading) {
       return (
         <LoadingScreen message="Ładowanie produktu..." />
@@ -1485,21 +1494,19 @@ export default function ProductDetailsPage({
                     <span className="text-xl font-bold text-white">
                       +48 787 148 016
                     </span>
+                    <span className="text-xs text-[#8b92a9] mt-2">Dostępne od pon. do pt. 8:00–18:00</span>
                   </a>
 
                   {/* Email */}
-                  <a
-                    href="mailto:info@rippa.pl"
-                    className="group flex flex-col items-center p-6 bg-white/5 border border-white/10 rounded-xl hover:border-[#1b3caf]/50 hover:bg-white/10 transition duration-300"
+                  <button
+                    onClick={handleEmailClick}
+                    className="group flex flex-col items-center p-6 bg-white/5 border border-white/10 rounded-xl hover:border-[#1b3caf]/50 hover:bg-white/10 transition duration-300 text-left"
                   >
                     <Mail className="w-8 h-8 text-[#1b3caf] mb-3 group-hover:scale-110 transition" />
-                    <span className="text-sm text-[#8b92a9] mb-1">Email</span>
-                    <span className="text-lg font-semibold text-white truncate">
-                      info@rippa.pl
-                    </span>
-                  </a>
-
-                  {/* (Chat removed) */}
+                    <span className="text-sm text-[#8b92a9] mb-1">Napisz do nas</span>
+                    <div className="text-lg font-semibold text-white truncate">info@rippa.pl</div>
+                    <div className="text-xs text-[#8b92a9] mt-2">Wyślemy ofertę i warianty finansowania</div>
+                  </button>
                 </div>
 
                 {/* Main Button */}
