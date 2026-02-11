@@ -395,6 +395,6 @@ export default function ComparePage() {
         </div>
       </div>
       <Footer />
-    </div>
-  );
-}
+      </>
+    );
+  }
