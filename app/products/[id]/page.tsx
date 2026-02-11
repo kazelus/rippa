@@ -25,7 +25,6 @@ import {
   Package,
 } from "lucide-react";
 
-
 interface Section {
   title: string;
   text: string;
@@ -37,9 +36,13 @@ function pickVariantUrl(img: any, preferredWidth = 1200) {
   if (!img) return null;
   if (img.variants && Array.isArray(img.variants) && img.variants.length > 0) {
     const wTag = `@${preferredWidth}`;
-    const avif = img.variants.find((v: string) => v.includes(wTag) && v.endsWith('.avif'));
+    const avif = img.variants.find(
+      (v: string) => v.includes(wTag) && v.endsWith(".avif"),
+    );
     if (avif) return avif;
-    const webp = img.variants.find((v: string) => v.includes(wTag) && v.endsWith('.webp'));
+    const webp = img.variants.find(
+      (v: string) => v.includes(wTag) && v.endsWith(".webp"),
+    );
     if (webp) return webp;
     const anyW = img.variants.find((v: string) => v.includes(wTag));
     if (anyW) return anyW;
@@ -60,7 +63,13 @@ interface Model {
   price: number;
   featured: boolean;
   category?: { id: string; name: string; slug: string };
-  images: Array<{ id: string; url: string; alt: string; blurDataUrl?: string | null; variants?: string[] | null }>;
+  images: Array<{
+    id: string;
+    url: string;
+    alt: string;
+    blurDataUrl?: string | null;
+    variants?: string[] | null;
+  }>;
   sections?: Section[];
   heroImageId?: string; // Dodane pole
   downloads?: Array<{
@@ -285,8 +294,6 @@ export default function ProductDetailsPage({
     }
   }, [productId]);
 
-
-
   useEffect(() => {
     const handleScroll = () => {
       setScrollY(window.scrollY);
@@ -498,9 +505,7 @@ export default function ProductDetailsPage({
   };
 
   if (isLoading) {
-      return (
-        <LoadingScreen message="Ładowanie produktu..." />
-      );
+    return <LoadingScreen message="Ładowanie produktu..." />;
   }
 
   if (!model) {
@@ -547,7 +552,9 @@ export default function ProductDetailsPage({
                 <Image
                   src={
                     pickVariantUrl(
-                      model.images.find((i) => i.url === heroImageUrl) || { url: heroImageUrl },
+                      model.images.find((i) => i.url === heroImageUrl) || {
+                        url: heroImageUrl,
+                      },
                     ) || heroImageUrl
                   }
                   alt={model.name}
@@ -556,11 +563,18 @@ export default function ProductDetailsPage({
                   priority
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   placeholder={
-                    model.images && model.images.find((i) => i.url === heroImageUrl)?.blurDataUrl
+                    model.images &&
+                    model.images.find((i) => i.url === heroImageUrl)
+                      ?.blurDataUrl
                       ? "blur"
                       : undefined
                   }
-                  blurDataURL={model.images && (model.images.find((i) => i.url === heroImageUrl)?.blurDataUrl ?? undefined)}
+                  blurDataURL={
+                    model.images &&
+                    (model.images.find((i) => i.url === heroImageUrl)
+                      ?.blurDataUrl ??
+                      undefined)
+                  }
                   className="w-full h-auto object-contain transition-transform duration-500 hover:scale-105"
                 />
               </div>
@@ -713,7 +727,8 @@ export default function ProductDetailsPage({
                   <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-[#242d3d] to-[#1a1f2e] rounded-2xl overflow-hidden border border-white/10">
                     <img
                       src={
-                        pickVariantUrl(effectiveImages[selectedImageIndex]) || galleryImageUrl
+                        pickVariantUrl(effectiveImages[selectedImageIndex]) ||
+                        galleryImageUrl
                       }
                       alt={model.name}
                       className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
@@ -919,15 +934,25 @@ export default function ProductDetailsPage({
               {/* Contact Info Card */}
               <div className="relative p-6 rounded-2xl border border-white/10 bg-gradient-to-br from-white/[7%] to-white/[2%] backdrop-blur-sm">
                 <div className="absolute -inset-px rounded-2xl pointer-events-none" />
-                <h3 className="text-white font-bold mb-2 text-lg">Potrzebujesz pomocy?</h3>
-                <p className="text-[#8b92a9] text-sm mb-4">Skontaktuj się z nami — pomożemy z wyceną i finansowaniem.</p>
+                <h3 className="text-white font-bold mb-2 text-lg">
+                  Potrzebujesz pomocy?
+                </h3>
+                <p className="text-[#8b92a9] text-sm mb-4">
+                  Skontaktuj się z nami — pomożemy z wyceną i finansowaniem.
+                </p>
 
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <a href="tel:+48787148016" className="flex items-center gap-3 px-3 py-2 rounded-lg bg-transparent hover:bg-white/5 transition text-white font-medium border border-white/6">
+                  <a
+                    href="tel:+48787148016"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-transparent hover:bg-white/5 transition text-white font-medium border border-white/6"
+                  >
                     <Phone className="w-4 h-4 text-[#1b3caf]" />
                     <span className="text-sm">+48 787 148 016</span>
                   </a>
-                  <a href="mailto:info@rippa.pl" className="flex items-center gap-3 px-3 py-2 rounded-lg bg-transparent hover:bg-white/5 transition text-white font-medium border border-white/6">
+                  <a
+                    href="mailto:info@rippa.pl"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-transparent hover:bg-white/5 transition text-white font-medium border border-white/6"
+                  >
                     <Mail className="w-4 h-4 text-[#1b3caf]" />
                     <span className="text-sm">info@rippa.pl</span>
                   </a>
@@ -935,7 +960,8 @@ export default function ProductDetailsPage({
 
                 <button
                   onClick={() => setQuoteModalOpen(true)}
-                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white font-semibold rounded-lg hover:scale-105 transition">
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white font-semibold rounded-lg hover:scale-105 transition"
+                >
                   Wyślij zapytanie
                 </button>
               </div>
@@ -973,11 +999,17 @@ export default function ProductDetailsPage({
                   const overrideValue = overrides[p.label];
                   const hasOverride = overrideValue !== undefined;
                   const val = hasOverride ? overrideValue : p.value;
-                  if (val === null || val === undefined || val === "") return false;
+                  if (val === null || val === undefined || val === "")
+                    return false;
                   if (typeof val === "string") {
                     try {
                       const parsed = JSON.parse(val);
-                      if (parsed === null || parsed === "" || parsed === undefined) return false;
+                      if (
+                        parsed === null ||
+                        parsed === "" ||
+                        parsed === undefined
+                      )
+                        return false;
                     } catch {
                       // not JSON, use raw
                     }
@@ -989,8 +1021,8 @@ export default function ProductDetailsPage({
                   return (
                     <div className="text-center py-12">
                       <p className="text-[#6b7280] text-lg">
-                        Parametry techniczne nie zostały jeszcze zdefiniowane dla tego
-                        modelu.
+                        Parametry techniczne nie zostały jeszcze zdefiniowane
+                        dla tego modelu.
                       </p>
                     </div>
                   );
@@ -1384,6 +1416,9 @@ export default function ProductDetailsPage({
                     display = String(raw ?? "");
                   }
 
+                  // If display is empty or placeholder, skip rendering this feature
+                  if (display === "" || display === "—") return null;
+
                   return (
                     <div
                       key={f.id}
@@ -1391,7 +1426,7 @@ export default function ProductDetailsPage({
                     >
                       <div className="text-sm text-[#b0b0b0]">{f.label}</div>
                       <div className="text-lg font-semibold text-white mt-1">
-                        {display || "—"}
+                        {display}
                       </div>
                     </div>
                   );
@@ -1546,7 +1581,9 @@ export default function ProductDetailsPage({
                     <span className="text-xl font-bold text-white">
                       +48 787 148 016
                     </span>
-                    <span className="text-xs text-[#8b92a9] mt-2">Dostępne od pon. do pt. 8:00–18:00</span>
+                    <span className="text-xs text-[#8b92a9] mt-2">
+                      Dostępne od pon. do pt. 8:00–18:00
+                    </span>
                   </a>
 
                   {/* Email */}
@@ -1555,9 +1592,15 @@ export default function ProductDetailsPage({
                     className="group flex flex-col items-center p-6 bg-white/5 border border-white/10 rounded-xl hover:border-[#1b3caf]/50 hover:bg-white/10 transition duration-300 text-left"
                   >
                     <Mail className="w-8 h-8 text-[#1b3caf] mb-3 group-hover:scale-110 transition" />
-                    <span className="text-sm text-[#8b92a9] mb-1">Napisz do nas</span>
-                    <div className="text-lg font-semibold text-white truncate">biuro@rippapolska.pl</div>
-                    <div className="text-xs text-[#8b92a9] mt-2">Wyślemy ofertę i warianty finansowania</div>
+                    <span className="text-sm text-[#8b92a9] mb-1">
+                      Napisz do nas
+                    </span>
+                    <div className="text-lg font-semibold text-white truncate">
+                      biuro@rippapolska.pl
+                    </div>
+                    <div className="text-xs text-[#8b92a9] mt-2">
+                      Wyślemy ofertę i warianty finansowania
+                    </div>
                   </button>
                 </div>
 
