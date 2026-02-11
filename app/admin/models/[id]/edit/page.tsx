@@ -85,6 +85,24 @@ export default function EditModelPage({
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState(0);
 
+
+  // Variant groups state
+  type VariantOption = {
+    name: string;
+    priceModifier: number;
+    isDefault: boolean;
+    images: Array<{ url: string; alt: string; isHero?: boolean }>;
+    parameterOverrides: Record<string, any>;
+  };
+  type VariantGroup = {
+    name: string;
+    options: VariantOption[];
+  };
+  const [variantGroups, setVariantGroups] = useState<VariantGroup[]>([]);
+  const [variantImageUploading, setVariantImageUploading] = useState<
+    string | null
+  >(null);
+
   // Persist draft to sessionStorage to avoid losing state on remount
   const storageKey = `admin-model-edit-${modelId}`;
 
@@ -128,23 +146,6 @@ export default function EditModelPage({
       sessionStorage.setItem(storageKey, JSON.stringify(draft));
     } catch (err) {}
   }, [modelId, formData, images, heroImageId, sections, downloads, featureValues, parameterValues, variantGroups, activeTab]);
-
-  // Variant groups state
-  type VariantOption = {
-    name: string;
-    priceModifier: number;
-    isDefault: boolean;
-    images: Array<{ url: string; alt: string; isHero?: boolean }>;
-    parameterOverrides: Record<string, any>;
-  };
-  type VariantGroup = {
-    name: string;
-    options: VariantOption[];
-  };
-  const [variantGroups, setVariantGroups] = useState<VariantGroup[]>([]);
-  const [variantImageUploading, setVariantImageUploading] = useState<
-    string | null
-  >(null);
 
   // Accessories state (linked model IDs)
   const [linkedAccessoryIds, setLinkedAccessoryIds] = useState<string[]>([]);
