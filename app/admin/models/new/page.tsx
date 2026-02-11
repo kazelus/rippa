@@ -482,6 +482,10 @@ export default function AddModelPage() {
       }
 
       setSuccess("Model został pomyślnie dodany!");
+      // Clear draft and reset form
+      try {
+        sessionStorage.removeItem("admin-model-new-draft");
+      } catch (err) {}
       setFormData({
         name: "",
         description: "",
@@ -496,8 +500,8 @@ export default function AddModelPage() {
       setSections([{ title: "", text: "" }]);
       setDownloads([]);
       setTimeout(() => {
-        router.push("/admin/dashboard");
-      }, 2000);
+        router.push("/admin/models");
+      }, 1000);
     } catch (err: any) {
       setError(err.message || "Błąd podczas dodawania modelu");
     } finally {
@@ -506,6 +510,45 @@ export default function AddModelPage() {
   };
 
   const [activeTab, setActiveTab] = useState(0);
+  
+  // Persist draft for new model to avoid losing state on remount
+  const storageKey = `admin-model-new-draft`;
+
+  // Load draft on mount
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(storageKey);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      if (draft.formData) setFormData((prev) => ({ ...prev, ...draft.formData }));
+      if (draft.images) setImages(draft.images);
+      if (draft.sections) setSections(draft.sections);
+      if (draft.downloads) setDownloads(draft.downloads);
+      if (draft.featureValues) setFeatureValues(draft.featureValues);
+      if (draft.parameterValues) setParameterValues(draft.parameterValues);
+      if (draft.variantGroups) setVariantGroups(draft.variantGroups);
+      if (typeof draft.activeTab === "number") setActiveTab(draft.activeTab);
+    } catch (err) {
+      // ignore
+    }
+  }, []);
+
+  // Save draft on relevant changes
+  useEffect(() => {
+    const draft = {
+      formData,
+      images,
+      sections,
+      downloads,
+      featureValues,
+      parameterValues,
+      variantGroups,
+      activeTab,
+    };
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify(draft));
+    } catch (err) {}
+  }, [formData, images, sections, downloads, featureValues, parameterValues, variantGroups, activeTab]);
 
   const tabs = [
     { id: 0, name: "Podstawowe" },

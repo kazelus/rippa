@@ -85,6 +85,50 @@ export default function EditModelPage({
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState(0);
 
+  // Persist draft to sessionStorage to avoid losing state on remount
+  const storageKey = `admin-model-edit-${modelId}`;
+
+  // Load draft if available (after modelId is known)
+  useEffect(() => {
+    if (!modelId) return;
+    try {
+      const raw = sessionStorage.getItem(storageKey);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      // Merge draft with fetched model data where sensible
+      if (draft.formData) setFormData((prev) => ({ ...prev, ...draft.formData }));
+      if (draft.images) setImages(draft.images);
+      if (draft.heroImageId) setHeroImageId(draft.heroImageId);
+      if (draft.sections) setSections(draft.sections);
+      if (draft.downloads) setDownloads(draft.downloads);
+      if (draft.featureValues) setFeatureValues(draft.featureValues);
+      if (draft.parameterValues) setParameterValues(draft.parameterValues);
+      if (draft.variantGroups) setVariantGroups(draft.variantGroups);
+      if (typeof draft.activeTab === "number") setActiveTab(draft.activeTab);
+    } catch (err) {
+      // ignore parse errors
+    }
+  }, [modelId]);
+
+  // Save draft on changes
+  useEffect(() => {
+    if (!modelId) return;
+    const draft = {
+      formData,
+      images,
+      heroImageId,
+      sections,
+      downloads,
+      featureValues,
+      parameterValues,
+      variantGroups,
+      activeTab,
+    };
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify(draft));
+    } catch (err) {}
+  }, [modelId, formData, images, heroImageId, sections, downloads, featureValues, parameterValues, variantGroups, activeTab]);
+
   // Variant groups state
   type VariantOption = {
     name: string;
@@ -689,9 +733,13 @@ export default function EditModelPage({
       }
 
       setSuccess("Model został pomyślnie zaktualizowany!");
+      // Clear draft and redirect to models list
+      try {
+        sessionStorage.removeItem(storageKey);
+      } catch (err) {}
       setTimeout(() => {
-        router.push("/admin/dashboard");
-      }, 2000);
+        router.push("/admin/models");
+      }, 1000);
     } catch (err: any) {
       setError(err.message || "Błąd podczas zapisywania modelu");
     } finally {
