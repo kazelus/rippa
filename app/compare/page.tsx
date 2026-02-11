@@ -396,7 +396,8 @@ export default function ComparePage() {
           </Link>
         </div>
       </div>
-      <Footer />
+    </div>
+    <Footer />
     </>
   );
 }
