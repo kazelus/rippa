@@ -560,7 +560,7 @@ export default function ProductDetailsPage({
                       ? "blur"
                       : undefined
                   }
-                  blurDataURL={model.images && model.images.find((i) => i.url === heroImageUrl)?.blurDataUrl}
+                  blurDataURL={model.images && (model.images.find((i) => i.url === heroImageUrl)?.blurDataUrl ?? undefined)}
                   className="w-full h-auto object-contain transition-transform duration-500 hover:scale-105"
                 />
               </div>
