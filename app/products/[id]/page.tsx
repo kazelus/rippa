@@ -533,6 +533,38 @@ export default function ProductDetailsPage({
     effectiveImages[selectedImageIndex]?.url || effectiveImages[0]?.url;
 
   // Nowoczesny Hero z animacją: tylko zdjęcie w tle
+  // Compute displayable features (skip empty/placeholder values)
+  const displayedFeatures = (model?.features || [])
+    .map((f: any) => {
+      const raw = f.value;
+      let display = "";
+      try {
+        if (f.type === "boolean") {
+          display = raw ? "Tak" : "Nie";
+        } else if (f.type === "number") {
+          display = typeof raw === "number" ? raw.toLocaleString("pl-PL") : String(raw);
+        } else if (f.type === "date") {
+          display = raw ? new Date(raw).toLocaleDateString("pl-PL") : "";
+        } else if (f.type === "enum" && f.options) {
+          const opts = Array.isArray(f.options) ? f.options : [];
+          if (opts.length && typeof opts[0] === "object") {
+            const found = opts.find((o: any) => o.value == raw || o.value === raw);
+            display = found ? found.label : String(raw ?? "");
+          } else {
+            display = String(raw ?? "");
+          }
+        } else {
+          if (raw === null || typeof raw === "undefined") display = "—";
+          else if (typeof raw === "object") display = JSON.stringify(raw);
+          else display = String(raw);
+        }
+      } catch (e) {
+        display = String(raw ?? "");
+      }
+      return { ...f, display };
+    })
+    .filter((f: any) => f.display !== "" && f.display !== "—");
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f1419] via-[#1a1f2e] to-[#0f1419]">
       <UnifiedNavbar />
@@ -1373,64 +1405,24 @@ export default function ProductDetailsPage({
         )}
 
         {/* Product Features (admin-configured) */}
-        {model?.features && model.features.length > 0 && (
+        {Array.isArray(displayedFeatures) && displayedFeatures.length > 0 && (
           <section className="py-16 border-t border-white/10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <h2 className="text-3xl font-bold text-white mb-8">
                 Cechy produktu
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {model.features.map((f: any) => {
-                  const raw = f.value;
-                  let display = "";
-                  try {
-                    if (f.type === "boolean") {
-                      display = raw ? "Tak" : "Nie";
-                    } else if (f.type === "number") {
-                      display =
-                        typeof raw === "number"
-                          ? raw.toLocaleString("pl-PL")
-                          : String(raw);
-                    } else if (f.type === "date") {
-                      display = raw
-                        ? new Date(raw).toLocaleDateString("pl-PL")
-                        : "";
-                    } else if (f.type === "enum" && f.options) {
-                      const opts = Array.isArray(f.options) ? f.options : [];
-                      if (opts.length && typeof opts[0] === "object") {
-                        const found = opts.find(
-                          (o: any) => o.value == raw || o.value === raw,
-                        );
-                        display = found ? found.label : String(raw ?? "");
-                      } else {
-                        display = String(raw ?? "");
-                      }
-                    } else {
-                      if (raw === null || typeof raw === "undefined")
-                        display = "—";
-                      else if (typeof raw === "object")
-                        display = JSON.stringify(raw);
-                      else display = String(raw);
-                    }
-                  } catch (e) {
-                    display = String(raw ?? "");
-                  }
-
-                  // If display is empty or placeholder, skip rendering this feature
-                  if (display === "" || display === "—") return null;
-
-                  return (
-                    <div
-                      key={f.id}
-                      className="p-4 bg-white/5 rounded-xl border border-white/10"
-                    >
-                      <div className="text-sm text-[#b0b0b0]">{f.label}</div>
-                      <div className="text-lg font-semibold text-white mt-1">
-                        {display}
-                      </div>
+                {displayedFeatures.map((f: any) => (
+                  <div
+                    key={f.id}
+                    className="p-4 bg-white/5 rounded-xl border border-white/10"
+                  >
+                    <div className="text-sm text-[#b0b0b0]">{f.label}</div>
+                    <div className="text-lg font-semibold text-white mt-1">
+                      {f.display}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </div>
           </section>
