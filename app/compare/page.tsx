@@ -1,6 +1,12 @@
 "use client";
 
+
 import { Fragment, useEffect, useState } from "react";
+import Link from "next/link";
+import { UnifiedNavbar } from "@/components/UnifiedNavbar";
+import { Footer } from "@/components/Footer";
+import LoadingScreen from "@/components/LoadingScreen";
+
 // Static breadcrumbs for Compare page
 const breadcrumbsJsonLd = {
   '@context': 'https://schema.org',
@@ -20,10 +26,6 @@ const breadcrumbsJsonLd = {
     },
   ],
 };
-import Link from "next/link";
-import { UnifiedNavbar } from "@/components/UnifiedNavbar";
-import { Footer } from "@/components/Footer";
-import LoadingScreen from "@/components/LoadingScreen";
 
 // Helper to parse JSON-stored parameter/feature values
 function parseValue(val: any): any {
