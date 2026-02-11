@@ -1,6 +1,25 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+// Static breadcrumbs for Compare page
+const breadcrumbsJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Strona główna',
+      item: 'https://rippapolska.pl',
+    },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: 'Porównanie',
+      item: 'https://rippapolska.pl/compare',
+    },
+  ],
+};
 import Link from "next/link";
 import { UnifiedNavbar } from "@/components/UnifiedNavbar";
 import { Footer } from "@/components/Footer";
@@ -180,9 +199,14 @@ export default function ComparePage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#071026] via-[#0f1724] to-[#071026] text-white">
-      <UnifiedNavbar />
-      <div className="max-w-7xl mx-auto pt-28 px-4 sm:px-6 lg:px-8 pb-20">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsJsonLd) }}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-[#071026] via-[#0f1724] to-[#071026] text-white">
+        <UnifiedNavbar />
+        <div className="max-w-7xl mx-auto pt-28 px-4 sm:px-6 lg:px-8 pb-20">
         {/* Header */}
         <div className="bg-gradient-to-r from-[#081125] to-[#071026] rounded-2xl p-8 mb-8 border border-white/6 shadow-2xl">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
