@@ -18,12 +18,8 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    // Nie przekierowuj na stronie logowania
-    if (
-      status === "unauthenticated" &&
-      pathname !== "/admin" &&
-      !pathname.includes("/admin/")
-    ) {
+    // Jeśli użytkownik nie jest zalogowany, przekieruj na stronę logowania
+    if (status === "unauthenticated" && pathname !== "/admin") {
       router.push("/admin");
     }
   }, [status, router, pathname]);
