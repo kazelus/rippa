@@ -113,6 +113,12 @@ export async function GET(req: NextRequest) {
           id: img.id,
           url: img.url,
           alt: img.alt,
+          blurDataUrl: img.blurDataUrl || null,
+          variants: img.variants
+            ? typeof img.variants === "string"
+              ? JSON.parse(img.variants)
+              : img.variants
+            : null,
         })),
         sections: (sectionsByModel.get(model.id) || []).map((s: any) => ({
           title: s.title,

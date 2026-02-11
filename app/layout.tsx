@@ -3,7 +3,7 @@ import { Poppins } from "next/font/google";
 import { AuthProvider } from "./providers";
 import "./globals.css";
 
-import ChatWidgetClient from "./ChatWidgetClient";
+import ChatWidgetLoader from "@/components/ChatWidgetLoader";
 import CookieBanner from "@/components/CookieBanner";
 
 const poppins = Poppins({
@@ -27,9 +27,22 @@ export default function RootLayout({
     <html lang="pl">
       <body className={`${poppins.variable}`}>
         <AuthProvider>
+          {/* Preconnect to S3 if configured to speed up image delivery */}
+          {process.env.S3_BUCKET && process.env.S3_REGION && (
+            <>
+              <link
+                rel="preconnect"
+                href={`https://${process.env.S3_BUCKET}.s3.${process.env.S3_REGION}.amazonaws.com`}
+              />
+              <link
+                rel="preconnect"
+                href={`https://s3.${process.env.S3_REGION}.amazonaws.com`}
+              />
+            </>
+          )}
           {children}
           {/* Pokazuj ChatWidget tylko poza panelem admina, także na stronie głównej i kategorii */}
-          <ChatWidgetClient />
+          <ChatWidgetLoader />
           <CookieBanner />
         </AuthProvider>
       </body>

@@ -29,7 +29,8 @@
     "puppeteer": "^24.37.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-intersection-observer": "^9.13.0"
+    "react-intersection-observer": "^9.13.0",
+    "sharp": "^0.32.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

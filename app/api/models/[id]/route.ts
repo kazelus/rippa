@@ -102,7 +102,13 @@ export async function GET(
     // Cache public single-model responses
     const response = NextResponse.json({
       ...model,
-      images: imagesResult.rows,
+      images: imagesResult.rows.map((img: any) => ({
+        id: img.id,
+        url: img.url,
+        alt: img.alt,
+        blurDataUrl: img.blurDataUrl || null,
+        variants: img.variants ? (typeof img.variants === "string" ? JSON.parse(img.variants) : img.variants) : null,
+      })),
       sections: sectionsResult.rows.map((s: any) => ({
         title: s.title,
         text: s.text,

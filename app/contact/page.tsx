@@ -96,7 +96,7 @@ export default function ContactPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#080c11] selection:bg-[#1b3caf] selection:text-white">
+    <div className="min-h-screen bg-gradient-to-br from-[#0f1419] to-[#1a1f2e] selection:bg-[#1b3caf] selection:text-white">
       <UnifiedNavbar />
 
       <main className="relative z-10 pt-32 pb-24">

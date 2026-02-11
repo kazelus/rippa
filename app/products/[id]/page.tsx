@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UnifiedNavbar } from "@/components/UnifiedNavbar";
@@ -31,6 +32,22 @@ interface Section {
   image?: { url: string; alt: string };
 }
 
+// Pick the best variant URL for a given image (prefer avif 1200, then webp 1200, then any 1200, then first variant, then original)
+function pickVariantUrl(img: any, preferredWidth = 1200) {
+  if (!img) return null;
+  if (img.variants && Array.isArray(img.variants) && img.variants.length > 0) {
+    const wTag = `@${preferredWidth}`;
+    const avif = img.variants.find((v: string) => v.includes(wTag) && v.endsWith('.avif'));
+    if (avif) return avif;
+    const webp = img.variants.find((v: string) => v.includes(wTag) && v.endsWith('.webp'));
+    if (webp) return webp;
+    const anyW = img.variants.find((v: string) => v.includes(wTag));
+    if (anyW) return anyW;
+    return img.variants[0];
+  }
+  return img.url || null;
+}
+
 interface Model {
   id: string;
   name: string;
@@ -43,7 +60,7 @@ interface Model {
   price: number;
   featured: boolean;
   category?: { id: string; name: string; slug: string };
-  images: Array<{ id: string; url: string; alt: string }>;
+  images: Array<{ id: string; url: string; alt: string; blurDataUrl?: string | null; variants?: string[] | null }>;
   sections?: Section[];
   heroImageId?: string; // Dodane pole
   downloads?: Array<{
@@ -268,6 +285,8 @@ export default function ProductDetailsPage({
     }
   }, [productId]);
 
+
+
   useEffect(() => {
     const handleScroll = () => {
       setScrollY(window.scrollY);
@@ -275,6 +294,24 @@ export default function ProductDetailsPage({
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Hero image: compute and preload (must be declared before any early returns to keep hooks order)
+  const heroImageUrl = getEffectiveHeroUrl();
+
+  useEffect(() => {
+    if (!heroImageUrl) return;
+    if (typeof document === "undefined") return;
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "image";
+    link.href = heroImageUrl;
+    document.head.appendChild(link);
+    return () => {
+      try {
+        document.head.removeChild(link);
+      } catch {}
+    };
+  }, [heroImageUrl]);
 
   const addToCompare = (e?: any) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
@@ -455,7 +492,7 @@ export default function ProductDetailsPage({
     if (!model) return;
     const subject = `Zapytanie o ${model.name}`;
     const body = `Proszę o wycenę dla modelu ${model.name} (ID: ${model.id}).\nLink: ${window.location.href}\n\nDodatkowe informacje:`;
-    window.location.href = `mailto:info@rippa.pl?subject=${encodeURIComponent(
+    window.location.href = `mailto:biuro@rippapolska.pl?subject=${encodeURIComponent(
       subject,
     )}&body=${encodeURIComponent(body)}`;
   };
@@ -483,8 +520,7 @@ export default function ProductDetailsPage({
     );
   }
 
-  // Hero image: use variant-aware hero
-  const heroImageUrl = getEffectiveHeroUrl();
+  // Hero image: use variant-aware hero (preload effect moved earlier)
 
   // Gallery images: use variant-aware gallery
   const effectiveImages = getEffectiveImages();
@@ -508,9 +544,23 @@ export default function ProductDetailsPage({
           {heroImageUrl && (
             <div className="w-full lg:w-1/2 flex items-center justify-center">
               <div className="relative w-full max-w-md lg:max-w-none">
-                <img
-                  src={heroImageUrl}
+                <Image
+                  src={
+                    pickVariantUrl(
+                      model.images.find((i) => i.url === heroImageUrl) || { url: heroImageUrl },
+                    ) || heroImageUrl
+                  }
                   alt={model.name}
+                  width={1200}
+                  height={800}
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  placeholder={
+                    model.images && model.images.find((i) => i.url === heroImageUrl)?.blurDataUrl
+                      ? "blur"
+                      : undefined
+                  }
+                  blurDataURL={model.images && model.images.find((i) => i.url === heroImageUrl)?.blurDataUrl}
                   className="w-full h-auto object-contain transition-transform duration-500 hover:scale-105"
                 />
               </div>
@@ -662,7 +712,9 @@ export default function ProductDetailsPage({
                 {galleryImageUrl ? (
                   <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-[#242d3d] to-[#1a1f2e] rounded-2xl overflow-hidden border border-white/10">
                     <img
-                      src={galleryImageUrl}
+                      src={
+                        pickVariantUrl(effectiveImages[selectedImageIndex]) || galleryImageUrl
+                      }
                       alt={model.name}
                       className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
                       loading="lazy"
@@ -737,7 +789,7 @@ export default function ProductDetailsPage({
                       }`}
                     >
                       <img
-                        src={image.url}
+                        src={pickVariantUrl(image) || image.url}
                         alt={image.alt}
                         className="w-full h-full object-cover"
                         loading="lazy"
@@ -1504,7 +1556,7 @@ export default function ProductDetailsPage({
                   >
                     <Mail className="w-8 h-8 text-[#1b3caf] mb-3 group-hover:scale-110 transition" />
                     <span className="text-sm text-[#8b92a9] mb-1">Napisz do nas</span>
-                    <div className="text-lg font-semibold text-white truncate">info@rippa.pl</div>
+                    <div className="text-lg font-semibold text-white truncate">biuro@rippapolska.pl</div>
                     <div className="text-xs text-[#8b92a9] mt-2">Wyślemy ofertę i warianty finansowania</div>
                   </button>
                 </div>
