@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import {
   Search,
@@ -35,7 +36,7 @@ interface Model {
   images: Array<{ id: string; url: string; alt: string }>;
   quickSpecs?: Array<{
     label: string;
-    value: any;
+    value: string | number;
     unit: string;
     paramLabel: string;
   }>;
@@ -95,7 +96,7 @@ export function ProductsClient() {
   const activeCategory = categories.find((c) => c.id === selectedCategory);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-20">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-20 relative z-10">
       {/* Header */}
       <div className="flex items-center mb-6">
         <Link
@@ -256,10 +257,12 @@ export function ProductsClient() {
               {/* Image */}
               <div className="relative h-60 overflow-hidden bg-gradient-to-br from-[#0f1419] to-[#1a1f2e]">
                 {model.images && model.images.length > 0 ? (
-                  <img
+                  <Image
                     src={model.images[0].url}
                     alt={model.images[0].alt || model.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[#8b92a9]">
