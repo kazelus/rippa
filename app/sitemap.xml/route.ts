@@ -20,11 +20,11 @@ export async function GET() {
     ...models.map((m: any) => `https://rippapolska.pl/products/${m.id}`),
   ];
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
     .map(
       (url) => `<url><loc>${url}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`
     )
-    .join("\n")}\n</sitemapindex>`;
+    .join("\n")}\n</urlset>`;
 
   return new NextResponse(xml, {
     headers: {
