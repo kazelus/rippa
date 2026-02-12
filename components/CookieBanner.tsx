@@ -49,8 +49,12 @@ export default function CookieBanner() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[#b0b8cc] text-sm leading-relaxed mb-3">
-                Używamy plików cookies w celu zapewnienia prawidłowego działania strony.{" "}
-                <Link href="/privacy" className="text-[#0f9fdf] hover:underline">
+                Używamy plików cookies w celu zapewnienia prawidłowego działania
+                strony.{" "}
+                <Link
+                  href="/privacy"
+                  className="text-[#0f9fdf] hover:underline"
+                >
                   Dowiedz się więcej
                 </Link>
               </p>

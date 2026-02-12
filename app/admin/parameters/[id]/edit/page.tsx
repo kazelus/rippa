@@ -159,7 +159,9 @@ export default function EditParameterPage({
   };
 
   if (loading) {
-    return <LoadingScreen fullScreen={false} message="Ładowanie parametru..." />;
+    return (
+      <LoadingScreen fullScreen={false} message="Ładowanie parametru..." />
+    );
   }
 
   return (

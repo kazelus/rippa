@@ -84,8 +84,32 @@ export default function AboutPage() {
   const stat3 = useCounter(100, 2000, statsReveal.isVisible);
   const stat4 = useCounter(48, 1800, statsReveal.isVisible);
 
+  // Static breadcrumbs for About page
+  const breadcrumbsJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Strona główna',
+        item: 'https://rippapolska.pl',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'O nas',
+        item: 'https://rippapolska.pl/about',
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f1419] via-[#1a1f2e] to-[#0f1419]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsJsonLd) }}
+      />
       <UnifiedNavbar />
 
       {/* ─── Hero Section — full viewport ─── */}

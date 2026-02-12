@@ -19,9 +19,7 @@ export default function PrivacyPage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-4">
             Polityka Prywatności i Cookies
           </h1>
-          <p className="text-[#8b92a9]">
-            Ostatnia aktualizacja: 8 lutego 2026
-          </p>
+          <p className="text-[#8b92a9]">Ostatnia aktualizacja: 8 lutego 2026</p>
         </div>
 
         <div className="space-y-16">
@@ -40,14 +38,20 @@ export default function PrivacyPage() {
                   1. Administrator Danych
                 </h3>
                 <p>
-                  Administratorem Twoich danych osobowych jest Rippa Polska z siedzibą
-                  przy ul. Sadowa 1, 34-120 Sułkowice. Kontakt z administratorem:
-                  e-mail{" "}
-                  <a href="mailto:biuro@rippapolska.pl" className="text-[#0f9fdf] hover:underline">
+                  Administratorem Twoich danych osobowych jest Rippa Polska z
+                  siedzibą przy ul. Sadowa 1, 34-120 Sułkowice. Kontakt z
+                  administratorem: e-mail{" "}
+                  <a
+                    href="mailto:biuro@rippapolska.pl"
+                    className="text-[#0f9fdf] hover:underline"
+                  >
                     biuro@rippapolska.pl
                   </a>
                   , tel.{" "}
-                  <a href="tel:+48787148016" className="text-[#0f9fdf] hover:underline">
+                  <a
+                    href="tel:+48787148016"
+                    className="text-[#0f9fdf] hover:underline"
+                  >
                     +48 787 148 016
                   </a>
                   .
@@ -59,18 +63,25 @@ export default function PrivacyPage() {
                   2. Jakie dane zbieramy
                 </h3>
                 <p className="mb-3">
-                  Zbieramy dane osobowe wyłącznie w zakresie niezbędnym do realizacji
-                  usług. Dotyczy to danych podanych dobrowolnie w:
+                  Zbieramy dane osobowe wyłącznie w zakresie niezbędnym do
+                  realizacji usług. Dotyczy to danych podanych dobrowolnie w:
                 </p>
                 <ul className="list-disc list-inside space-y-1.5 ml-2">
                   <li>
-                    <strong className="text-white/80">Formularz kontaktowy</strong> — imię i nazwisko, adres e-mail, numer telefonu (opcjonalnie), treść wiadomości
+                    <strong className="text-white/80">
+                      Formularz kontaktowy
+                    </strong>{" "}
+                    — imię i nazwisko, adres e-mail, numer telefonu
+                    (opcjonalnie), treść wiadomości
                   </li>
                   <li>
-                    <strong className="text-white/80">Formularz wyceny</strong> — imię i nazwisko, adres e-mail, numer telefonu, nazwa produktu, treść zapytania
+                    <strong className="text-white/80">Formularz wyceny</strong>{" "}
+                    — imię i nazwisko, adres e-mail, numer telefonu, nazwa
+                    produktu, treść zapytania
                   </li>
                   <li>
-                    <strong className="text-white/80">Chat na stronie</strong> — treść rozmowy i podane dane kontaktowe
+                    <strong className="text-white/80">Chat na stronie</strong> —
+                    treść rozmowy i podane dane kontaktowe
                   </li>
                 </ul>
               </div>
@@ -80,10 +91,16 @@ export default function PrivacyPage() {
                   3. Cel przetwarzania danych
                 </h3>
                 <ul className="list-disc list-inside space-y-1.5 ml-2">
-                  <li>Odpowiedź na zapytania przesłane formularzem kontaktowym lub wyceny</li>
+                  <li>
+                    Odpowiedź na zapytania przesłane formularzem kontaktowym lub
+                    wyceny
+                  </li>
                   <li>Przygotowanie oferty handlowej</li>
                   <li>Obsługa rozmów przez chat</li>
-                  <li>Realizacja prawnie uzasadnionego interesu administratora (art. 6 ust. 1 lit. f RODO)</li>
+                  <li>
+                    Realizacja prawnie uzasadnionego interesu administratora
+                    (art. 6 ust. 1 lit. f RODO)
+                  </li>
                 </ul>
               </div>
 
@@ -92,9 +109,10 @@ export default function PrivacyPage() {
                   4. Podstawa prawna
                 </h3>
                 <p>
-                  Dane przetwarzane są na podstawie art. 6 ust. 1 lit. a RODO (zgoda — przesłanie
-                  formularza), lit. b (podjęcie działań na żądanie osoby przed zawarciem umowy)
-                  oraz lit. f (prawnie uzasadniony interes administratora — odpowiedź na zapytanie).
+                  Dane przetwarzane są na podstawie art. 6 ust. 1 lit. a RODO
+                  (zgoda — przesłanie formularza), lit. b (podjęcie działań na
+                  żądanie osoby przed zawarciem umowy) oraz lit. f (prawnie
+                  uzasadniony interes administratora — odpowiedź na zapytanie).
                 </p>
               </div>
 
@@ -103,9 +121,10 @@ export default function PrivacyPage() {
                   5. Okres przechowywania
                 </h3>
                 <p>
-                  Dane przechowujemy przez okres niezbędny do realizacji celu, dla którego
-                  zostały zebrane, nie dłużej niż 2 lata od ostatniego kontaktu, chyba że
-                  dłuższy okres wynika z obowiązujących przepisów prawa.
+                  Dane przechowujemy przez okres niezbędny do realizacji celu,
+                  dla którego zostały zebrane, nie dłużej niż 2 lata od
+                  ostatniego kontaktu, chyba że dłuższy okres wynika z
+                  obowiązujących przepisów prawa.
                 </p>
               </div>
 
@@ -126,7 +145,10 @@ export default function PrivacyPage() {
                 </ul>
                 <p className="mt-3">
                   W celu realizacji swoich praw skontaktuj się z nami:{" "}
-                  <a href="mailto:biuro@rippapolska.pl" className="text-[#0f9fdf] hover:underline">
+                  <a
+                    href="mailto:biuro@rippapolska.pl"
+                    className="text-[#0f9fdf] hover:underline"
+                  >
                     biuro@rippapolska.pl
                   </a>
                 </p>
@@ -137,9 +159,10 @@ export default function PrivacyPage() {
                   7. Udostępnianie danych
                 </h3>
                 <p>
-                  Dane nie są sprzedawane ani udostępniane podmiotom trzecim w celach
-                  marketingowych. Mogą być przekazane dostawcom usług IT (hosting, poczta
-                  e-mail) wyłącznie w zakresie niezbędnym do świadczenia usług.
+                  Dane nie są sprzedawane ani udostępniane podmiotom trzecim w
+                  celach marketingowych. Mogą być przekazane dostawcom usług IT
+                  (hosting, poczta e-mail) wyłącznie w zakresie niezbędnym do
+                  świadczenia usług.
                 </p>
               </div>
             </div>
@@ -163,9 +186,10 @@ export default function PrivacyPage() {
                   1. Czym są cookies?
                 </h3>
                 <p>
-                  Cookies (ciasteczka) to małe pliki tekstowe zapisywane na Twoim
-                  urządzeniu przez przeglądarkę internetową. Służą do prawidłowego
-                  funkcjonowania strony i poprawy komfortu korzystania z niej.
+                  Cookies (ciasteczka) to małe pliki tekstowe zapisywane na
+                  Twoim urządzeniu przez przeglądarkę internetową. Służą do
+                  prawidłowego funkcjonowania strony i poprawy komfortu
+                  korzystania z niej.
                 </p>
               </div>
 
@@ -177,25 +201,39 @@ export default function PrivacyPage() {
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-white/[0.03]">
-                        <th className="px-4 py-3 text-white font-semibold text-xs uppercase tracking-wider">Rodzaj</th>
-                        <th className="px-4 py-3 text-white font-semibold text-xs uppercase tracking-wider">Cel</th>
-                        <th className="px-4 py-3 text-white font-semibold text-xs uppercase tracking-wider">Wygaśnięcie</th>
+                        <th className="px-4 py-3 text-white font-semibold text-xs uppercase tracking-wider">
+                          Rodzaj
+                        </th>
+                        <th className="px-4 py-3 text-white font-semibold text-xs uppercase tracking-wider">
+                          Cel
+                        </th>
+                        <th className="px-4 py-3 text-white font-semibold text-xs uppercase tracking-wider">
+                          Wygaśnięcie
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/[0.04]">
                       <tr>
                         <td className="px-4 py-3 text-white/80">Niezbędne</td>
-                        <td className="px-4 py-3">Sesja panelu administracyjnego (NextAuth)</td>
+                        <td className="px-4 py-3">
+                          Sesja panelu administracyjnego (NextAuth)
+                        </td>
                         <td className="px-4 py-3">8 godzin</td>
                       </tr>
                       <tr>
-                        <td className="px-4 py-3 text-white/80">Funkcjonalne</td>
-                        <td className="px-4 py-3">Zapamiętanie zgody na cookies</td>
+                        <td className="px-4 py-3 text-white/80">
+                          Funkcjonalne
+                        </td>
+                        <td className="px-4 py-3">
+                          Zapamiętanie zgody na cookies
+                        </td>
                         <td className="px-4 py-3">365 dni</td>
                       </tr>
                       <tr>
                         <td className="px-4 py-3 text-white/80">Zewnętrzne</td>
-                        <td className="px-4 py-3">Google Maps — mapa na stronie kontakt</td>
+                        <td className="px-4 py-3">
+                          Google Maps — mapa na stronie kontakt
+                        </td>
                         <td className="px-4 py-3">Wg polityki Google</td>
                       </tr>
                     </tbody>
@@ -209,10 +247,10 @@ export default function PrivacyPage() {
                 </h3>
                 <p>
                   Możesz w każdej chwili zmienić ustawienia cookies w swojej
-                  przeglądarce — zablokować ich zapisywanie lub usunąć istniejące.
-                  Szczegółowe instrukcje znajdziesz w ustawieniach Twojej przeglądarki.
-                  Zablokowanie cookies niezbędnych może ograniczyć funkcjonalność
-                  niektórych elementów strony.
+                  przeglądarce — zablokować ich zapisywanie lub usunąć
+                  istniejące. Szczegółowe instrukcje znajdziesz w ustawieniach
+                  Twojej przeglądarki. Zablokowanie cookies niezbędnych może
+                  ograniczyć funkcjonalność niektórych elementów strony.
                 </p>
               </div>
             </div>
@@ -224,10 +262,15 @@ export default function PrivacyPage() {
               <Mail className="w-5 h-5" />
             </div>
             <div className="text-center sm:text-left">
-              <h3 className="text-white font-semibold mb-1">Masz pytania dotyczące prywatności?</h3>
+              <h3 className="text-white font-semibold mb-1">
+                Masz pytania dotyczące prywatności?
+              </h3>
               <p className="text-[#8b92a9] text-sm">
                 Skontaktuj się z nami:{" "}
-                <a href="mailto:biuro@rippapolska.pl" className="text-[#0f9fdf] hover:underline">
+                <a
+                  href="mailto:biuro@rippapolska.pl"
+                  className="text-[#0f9fdf] hover:underline"
+                >
                   biuro@rippapolska.pl
                 </a>
               </p>

@@ -1,0 +1,21 @@
+{
+  "name": "Rippa Polska",
+  "short_name": "Rippa",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1419",
+  "theme_color": "#1b3caf",
+  "description": "Mini koparki, maszyny budowlane, sprzedaż, serwis, części.",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

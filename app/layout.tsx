@@ -13,9 +13,26 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Rippa Polska - Mini-koparki klasy premium",
+  title: "Rippa Polska — Mini Koparki, Maszyny Budowlane",
   description:
-    "Profesjonalne mini-koparki do zastosowań przemysłowych. Niezawodność, precyzja i serwis w Polsce.",
+    "Rippa Polska — mini koparki, maszyny budowlane, sprzedaż, serwis, części. Najlepsze ceny, szybka dostawa, profesjonalne doradztwo.",
+  openGraph: {
+    title: "Rippa Polska — Mini Koparki, Maszyny Budowlane",
+    description:
+      "Mini koparki, maszyny budowlane, sprzedaż, serwis, części. Najlepsze ceny, szybka dostawa, profesjonalne doradztwo.",
+    url: "https://rippapolska.pl",
+    siteName: "Rippa Polska",
+    images: [
+      {
+        url: "https://rippapolska.pl/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "Rippa Polska logo",
+      },
+    ],
+    locale: "pl_PL",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -25,6 +42,34 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pl">
+      <head>
+        <meta name="robots" content="index, follow" />
+        <meta name="keywords" content="mini koparki, maszyny budowlane, rippa, sprzedaż, serwis, części" />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="pl_PL" />
+        <meta property="og:site_name" content="Rippa Polska" />
+        <link rel="canonical" href="https://rippapolska.pl" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="author" content="Rippa Polska" />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="manifest" href="/manifest.json" />
+        <script type="application/ld+json" suppressHydrationWarning>{`
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "Rippa Polska",
+            "url": "https://rippapolska.pl",
+            "logo": "https://rippapolska.pl/logo.png",
+            "contactPoint": [{
+              "@type": "ContactPoint",
+              "telephone": "+48-123-456-789",
+              "contactType": "customer service",
+              "areaServed": "PL",
+              "availableLanguage": ["Polish", "English"]
+            }]
+          }
+        `}</script>
+      </head>
       <body className={`${poppins.variable}`}>
         <AuthProvider>
           {/* Preconnect to S3 if configured to speed up image delivery */}

@@ -565,8 +565,45 @@ export default function ProductDetailsPage({
     })
     .filter((f: any) => f.display !== "" && f.display !== "—");
 
+  // Generate dynamic Product schema.org JSON-LD
+  const productJsonLd = model
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: model.name,
+        description: model.heroDescription || model.description,
+        sku: model.id,
+        brand: {
+          '@type': 'Brand',
+          name: 'Rippa Polska',
+        },
+        image: (model.images || []).map((img) => img.url),
+        offers: {
+          '@type': 'Offer',
+          priceCurrency: 'PLN',
+          price: String(model.price),
+          availability: 'https://schema.org/InStock',
+          url: `https://rippapolska.pl/products/${model.id}`,
+        },
+        category: model.category?.name || undefined,
+        additionalProperty: (model.features || [])
+          .filter((f) => f.value !== null && f.value !== undefined && f.value !== "")
+          .map((f) => ({
+            '@type': 'PropertyValue',
+            name: f.label,
+            value: f.value,
+          })),
+      }
+    : null;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f1419] via-[#1a1f2e] to-[#0f1419]">
+      {productJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+        />
+      )}
       <UnifiedNavbar />
 
       {/* Hero Section - Modern Full-Screen Design */}

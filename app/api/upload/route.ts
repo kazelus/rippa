@@ -94,15 +94,26 @@ export async function POST(req: NextRequest) {
 
         // Generate tiny placeholder (blur) - use webp small thumbnail
         try {
-          const thumb = await sharp.default(buffer).resize({ width: 20 }).webp({ quality: 50 }).toBuffer();
+          const thumb = await sharp
+            .default(buffer)
+            .resize({ width: 20 })
+            .webp({ quality: 50 })
+            .toBuffer();
           blurDataURL = `data:image/webp;base64,${thumb.toString("base64")}`;
         } catch (thumbErr) {
-          console.warn("[UPLOAD] blurDataURL generation failed:", (thumbErr as any)?.message || thumbErr);
+          console.warn(
+            "[UPLOAD] blurDataURL generation failed:",
+            (thumbErr as any)?.message || thumbErr,
+          );
         }
 
         for (const w of sizes) {
           // AVIF
-          const avifBuf = await sharp.default(buffer).resize({ width: w }).avif().toBuffer();
+          const avifBuf = await sharp
+            .default(buffer)
+            .resize({ width: w })
+            .avif()
+            .toBuffer();
           const avifKey = `${base}@${w}.avif`;
           await s3.send(
             new PutObjectCommand({
@@ -114,10 +125,17 @@ export async function POST(req: NextRequest) {
               CacheControl: "public, max-age=31536000, immutable",
             }),
           );
-          variants.push({ key: avifKey, url: `https://${s3Bucket}.s3.${process.env.S3_REGION}.amazonaws.com/${encodeURIComponent(avifKey)}` });
+          variants.push({
+            key: avifKey,
+            url: `https://${s3Bucket}.s3.${process.env.S3_REGION}.amazonaws.com/${encodeURIComponent(avifKey)}`,
+          });
 
           // WEBP
-          const webpBuf = await sharp.default(buffer).resize({ width: w }).webp().toBuffer();
+          const webpBuf = await sharp
+            .default(buffer)
+            .resize({ width: w })
+            .webp()
+            .toBuffer();
           const webpKey = `${base}@${w}.webp`;
           await s3.send(
             new PutObjectCommand({
@@ -129,11 +147,17 @@ export async function POST(req: NextRequest) {
               CacheControl: "public, max-age=31536000, immutable",
             }),
           );
-          variants.push({ key: webpKey, url: `https://${s3Bucket}.s3.${process.env.S3_REGION}.amazonaws.com/${encodeURIComponent(webpKey)}` });
+          variants.push({
+            key: webpKey,
+            url: `https://${s3Bucket}.s3.${process.env.S3_REGION}.amazonaws.com/${encodeURIComponent(webpKey)}`,
+          });
         }
       } catch (err) {
         // sharp not available or processing failed — continue without variants
-        console.warn("[UPLOAD] sharp processing skipped:", (err as any)?.message || err);
+        console.warn(
+          "[UPLOAD] sharp processing skipped:",
+          (err as any)?.message || err,
+        );
       }
 
       const url = `https://${s3Bucket}.s3.${process.env.S3_REGION}.amazonaws.com/${encodeURIComponent(filename)}`;
@@ -149,17 +173,38 @@ export async function POST(req: NextRequest) {
               alt,
               modelId,
               blurDataUrl: blurDataURL,
-              variants: variants.length ? variants.map((v) => v.url) : undefined,
+              variants: variants.length
+                ? variants.map((v) => v.url)
+                : undefined,
             },
           });
-          return NextResponse.json({ success: true, url, filename, variants, blurDataURL, image: created }, { status: 201 });
+          return NextResponse.json(
+            {
+              success: true,
+              url,
+              filename,
+              variants,
+              blurDataURL,
+              image: created,
+            },
+            { status: 201 },
+          );
         } catch (dbErr) {
-          console.warn("[UPLOAD] failed to create image record:", (dbErr as any)?.message || dbErr);
-          return NextResponse.json({ success: true, url, filename, variants, blurDataURL }, { status: 201 });
+          console.warn(
+            "[UPLOAD] failed to create image record:",
+            (dbErr as any)?.message || dbErr,
+          );
+          return NextResponse.json(
+            { success: true, url, filename, variants, blurDataURL },
+            { status: 201 },
+          );
         }
       }
 
-      return NextResponse.json({ success: true, url, filename, variants, blurDataURL }, { status: 201 });
+      return NextResponse.json(
+        { success: true, url, filename, variants, blurDataURL },
+        { status: 201 },
+      );
     }
 
     // Check if we have Blob token (Vercel Blob) or use local storage (development)
@@ -201,24 +246,48 @@ export async function POST(req: NextRequest) {
         const base = path.parse(filename).name;
 
         try {
-          const thumb = await sharp.default(buffer).resize({ width: 20 }).webp({ quality: 50 }).toBuffer();
+          const thumb = await sharp
+            .default(buffer)
+            .resize({ width: 20 })
+            .webp({ quality: 50 })
+            .toBuffer();
           blurDataURL = `data:image/webp;base64,${thumb.toString("base64")}`;
         } catch (thumbErr) {
-          console.warn("[UPLOAD] blurDataURL generation failed (dev):", (thumbErr as any)?.message || thumbErr);
+          console.warn(
+            "[UPLOAD] blurDataURL generation failed (dev):",
+            (thumbErr as any)?.message || thumbErr,
+          );
         }
 
         for (const w of sizes) {
           const avifPath = path.join(uploadsDir, `${base}@${w}.avif`);
           const webpPath = path.join(uploadsDir, `${base}@${w}.webp`);
-          const avifBuf = await sharp.default(buffer).resize({ width: w }).avif().toBuffer();
-          const webpBuf = await sharp.default(buffer).resize({ width: w }).webp().toBuffer();
+          const avifBuf = await sharp
+            .default(buffer)
+            .resize({ width: w })
+            .avif()
+            .toBuffer();
+          const webpBuf = await sharp
+            .default(buffer)
+            .resize({ width: w })
+            .webp()
+            .toBuffer();
           await writeFile(avifPath, avifBuf);
           await writeFile(webpPath, webpBuf);
-          variants.push({ path: avifPath, url: `/uploads/${encodeURIComponent(`${base}@${w}.avif`)}` });
-          variants.push({ path: webpPath, url: `/uploads/${encodeURIComponent(`${base}@${w}.webp`)}` });
+          variants.push({
+            path: avifPath,
+            url: `/uploads/${encodeURIComponent(`${base}@${w}.avif`)}`,
+          });
+          variants.push({
+            path: webpPath,
+            url: `/uploads/${encodeURIComponent(`${base}@${w}.webp`)}`,
+          });
         }
       } catch (err) {
-        console.warn("[UPLOAD] sharp processing skipped (dev):", (err as any)?.message || err);
+        console.warn(
+          "[UPLOAD] sharp processing skipped (dev):",
+          (err as any)?.message || err,
+        );
       }
 
       // Return local URL and any generated variants + blurDataURL
@@ -235,10 +304,26 @@ export async function POST(req: NextRequest) {
               blurDataUrl: blurDataURL,
             },
           });
-          return NextResponse.json({ success: true, url, filename, variants, blurDataURL, image: created }, { status: 201 });
+          return NextResponse.json(
+            {
+              success: true,
+              url,
+              filename,
+              variants,
+              blurDataURL,
+              image: created,
+            },
+            { status: 201 },
+          );
         } catch (dbErr) {
-          console.warn("[UPLOAD] failed to create image record (dev):", (dbErr as any)?.message || dbErr);
-          return NextResponse.json({ success: true, url, filename, variants, blurDataURL }, { status: 201 });
+          console.warn(
+            "[UPLOAD] failed to create image record (dev):",
+            (dbErr as any)?.message || dbErr,
+          );
+          return NextResponse.json(
+            { success: true, url, filename, variants, blurDataURL },
+            { status: 201 },
+          );
         }
       }
 

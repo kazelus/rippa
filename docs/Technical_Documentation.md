@@ -3,6 +3,7 @@
 Zawiera opis architektury, najważniejszych plików, endpointów oraz kroków uruchomienia projektu lokalnie i w produkcji.
 
 ## 1. Stos technologiczny
+
 - Frontend: Next.js 16 (App Router), React 19, TypeScript
 - Backend: Next.js server routes + Prisma / PostgreSQL
 - ORM: Prisma Client
@@ -10,6 +11,7 @@ Zawiera opis architektury, najważniejszych plików, endpointów oraz kroków ur
 - Dodatki: lucide-react, framer-motion
 
 ## 2. Struktura repozytorium (najważniejsze ścieżki)
+
 - `app/` — strony i układy aplikacji (App Router)
   - `app/admin/` — panel administracyjny
   - `app/products/`, `app/models/` — widoki produktów
@@ -19,6 +21,7 @@ Zawiera opis architektury, najważniejszych plików, endpointów oraz kroków ur
 - `api/` — API routes (również w `app/api/`)
 
 ## 3. Kluczowe pliki i co w nich znaleźć
+
 - `components/LoadingScreen.tsx` — jednolity komponent ładowania. Parametry:
   - `message?: string`
   - `fullScreen?: boolean` (domyślnie `true`). Ustaw `fullScreen=false` dla inline loaderów, żeby uniknąć czarnego boxa.
@@ -27,6 +30,7 @@ Zawiera opis architektury, najważniejszych plików, endpointów oraz kroków ur
 - `app/api/admin/contacts/route.ts` — endpoint zwracający listę zgłoszeń; ogranicza pola i wymusza maksymalny rozmiar strony (paginacja).
 
 ## 4. Najważniejsze endpointy (przykłady)
+
 - GET `/api/models` — lista modeli (opcje: `?all=true`).
 - GET `/api/models/{id}` — szczegóły modelu.
 - POST `/api/models` — dodaj model (admin).
@@ -36,6 +40,7 @@ Zawiera opis architektury, najważniejszych plików, endpointów oraz kroków ur
 - POST `/api/upload` — upload plików (zdjęcia, pliki do pobrania).
 
 ## 5. Baza danych i migracje
+
 - Schemat Prisma: `prisma/schema.prisma`.
 - Migracje znajdują się w `prisma/migrations/`.
 - Uruchom migracje w środowisku produkcyjnym:
@@ -52,7 +57,8 @@ node prisma/seed.js  # lub `npm run prisma:seed` jeśli zdefiniowane
 ```
 
 ## 6. Uruchomienie lokalne
-1. Skopiuj `.env.example` do `.env` i uzupełnij zmienne (DATABASE_URL, NEXTAUTH_SECRET, SMTP_* jeśli potrzebne).
+
+1. Skopiuj `.env.example` do `.env` i uzupełnij zmienne (DATABASE*URL, NEXTAUTH_SECRET, SMTP*\* jeśli potrzebne).
 2. Zainstaluj zależności:
 
 ```bash
@@ -85,22 +91,26 @@ npm run start
 ```
 
 ## 7. Zmiany wydajnościowe i dobre praktyki
+
 - Unikać N+1: używamy batch fetch (`WHERE modelId = ANY($1)`) oraz mapowania wyników do Map dla O(1) lookup.
 - Memoizacja inicjalizacji DB (`initializeDatabase()`), ale długoterminowo lepiej wykonywać DDL/migracje poza ścieżkami requestów.
 - Dodano indeksy na kolumnach często filtrowanych (`ContactSubmission.createdAt`, `Model.updatedAt`, `Model.categoryId`, `Model.featured`, `Model.visible`).
 - Endpointy publiczne mają `Cache-Control` (s-maxage/stale-while-revalidate) — przyspiesza odczyty przez CDN.
 
 ## 8. Najczęściej używane polecenia
+
 - Build: `npm run build`
 - Dev: `npm run dev`
 - Prisma generate: `npx prisma generate`
 - Deploy migrations (prod): `npx prisma migrate deploy`
 
 ## 9. Wskazówki do deployu na Vercel
-- Ustaw zmienne środowiskowe w panelu Vercel zgodnie z `.env` (DATABASE_URL, NEXTAUTH_SECRET, SMTP_*).
+
+- Ustaw zmienne środowiskowe w panelu Vercel zgodnie z `.env` (DATABASE*URL, NEXTAUTH_SECRET, SMTP*\*).
 - Upewnij się, że migracje są zastosowane (użyj `npx prisma migrate deploy` lub manualnego procesu migracji przed deployem).
 
 ## 10. Dalsze ulepszenia (rekomendacje)
+
 - Dodanie endpointu `GET /api/admin/contacts/{id}` aby pobierać pełną treść zgłoszenia na żądanie.
 - Krótkoterminowy cache (Redis) dla statystyk dashboardu.
 - Monitorowanie APM i alerty wydajności.
