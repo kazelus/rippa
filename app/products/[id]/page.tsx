@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { UnifiedNavbar } from "@/components/UnifiedNavbar";
 import { Footer } from "@/components/Footer";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -13,7 +12,6 @@ import {
   Phone,
   Mail,
   MapPin,
-  TrendingUp,
   ChevronDown,
   Maximize2,
   X,
@@ -32,7 +30,7 @@ interface Section {
 }
 
 // Pick the best variant URL for a given image (prefer avif 1200, then webp 1200, then any 1200, then first variant, then original)
-function pickVariantUrl(img: any, preferredWidth = 1200) {
+function pickVariantUrl(img: { variants?: string[] | null; url: string } | null | undefined, preferredWidth = 1200) {
   if (!img) return null;
   if (img.variants && Array.isArray(img.variants) && img.variants.length > 0) {
     const wTag = `@${preferredWidth}`;
@@ -83,8 +81,8 @@ interface Model {
     key: string;
     label: string;
     type: string;
-    options?: any;
-    value: any;
+    options?: (string | number | { label: string; value: string | number })[];
+    value: string | number | boolean | null;
     affectsPrice?: boolean;
     priceModifier?: number | null;
     priceModifierType?: string;
@@ -98,8 +96,8 @@ interface Model {
     type: string;
     unit?: string;
     group?: string;
-    options?: any;
-    value: any;
+    options?: (string | number | { label: string; value: string | number })[];
+    value: string | number | boolean | null;
     affectsPrice?: boolean;
     priceModifier?: number | null;
     priceModifierType?: string;
@@ -119,8 +117,15 @@ interface Model {
       priceModifier: number;
       isDefault: boolean;
       images?: Array<{ url: string; alt: string; isHero?: boolean }> | null;
-      parameterOverrides?: Record<string, any> | null;
+      parameterOverrides?: Record<string, string | number | boolean> | null;
     }>;
+  }>;
+  accessories?: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    price: number | null;
+    imageUrl: string | null;
   }>;
 }
 
@@ -129,7 +134,6 @@ export default function ProductDetailsPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const router = useRouter();
   const [productId, setProductId] = useState<string>("");
   const [model, setModel] = useState<Model | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -199,12 +203,15 @@ export default function ProductDetailsPage({
       url: string;
       alt: string;
       isHero?: boolean;
+      id?: string;
+      variants?: string[] | null;
+      blurDataUrl?: string | null;
     }> | null = null;
     if (model.variantGroups) {
       for (const group of model.variantGroups) {
         const selectedOptId = selectedVariants[group.id];
         if (selectedOptId) {
-          const opt = group.options.find((o) => o.id === selectedOptId);
+          const opt = group.options.find((o: { id: string }) => o.id === selectedOptId);
           if (opt?.images && opt.images.length > 0) {
             variantImages = opt.images;
           }
@@ -295,12 +302,27 @@ export default function ProductDetailsPage({
   }, [productId]);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setScrollY(window.scrollY);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setScrollY(window.scrollY);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
-    window.addEventListener("scroll", handleScroll);
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const scrollToContent = () => {
+    const content = document.getElementById("main-content");
+    if (content) {
+      content.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   // Hero image: compute and preload (must be declared before any early returns to keep hooks order)
   const heroImageUrl = getEffectiveHeroUrl();
@@ -388,7 +410,7 @@ export default function ProductDetailsPage({
         for (const group of model.variantGroups) {
           const selectedOptId = selectedVariants[group.id];
           if (selectedOptId) {
-            const opt = group.options.find((o: any) => o.id === selectedOptId);
+            const opt = group.options.find((o: { id: string }) => o.id === selectedOptId);
             if (opt) {
               variants.push({
                 groupName: group.name,
@@ -473,8 +495,8 @@ export default function ProductDetailsPage({
       // Initialize default variant selections from model-level variant groups
       const defaults: Record<string, string> = {};
       if (data.variantGroups) {
-        data.variantGroups.forEach((group: any) => {
-          const defaultOpt = group.options.find((o: any) => o.isDefault);
+        data.variantGroups.forEach((group: { id: string; options: any[] }) => {
+          const defaultOpt = group.options.find((o: { isDefault: boolean }) => o.isDefault);
           if (defaultOpt) {
             defaults[group.id] = defaultOpt.id;
           } else if (group.options.length > 0) {
@@ -535,7 +557,7 @@ export default function ProductDetailsPage({
   // Nowoczesny Hero z animacją: tylko zdjęcie w tle
   // Compute displayable features (skip empty/placeholder values)
   const displayedFeatures = (model?.features || [])
-    .map((f: any) => {
+    .map((f: { value: any; type: string; options?: any[]; id: string; label: string }) => {
       const raw = f.value;
       let display = "";
       try {
@@ -548,7 +570,7 @@ export default function ProductDetailsPage({
         } else if (f.type === "enum" && f.options) {
           const opts = Array.isArray(f.options) ? f.options : [];
           if (opts.length && typeof opts[0] === "object") {
-            const found = opts.find((o: any) => o.value == raw || o.value === raw);
+            const found = opts.find((o: { value: any; label: string }) => o.value == raw || o.value === raw);
             display = found ? found.label : String(raw ?? "");
           } else {
             display = String(raw ?? "");
@@ -563,7 +585,7 @@ export default function ProductDetailsPage({
       }
       return { ...f, display };
     })
-    .filter((f: any) => f.display !== "" && f.display !== "—");
+    .filter((f: { display: string }) => f.display !== "" && f.display !== "—");
 
   // Generate dynamic Product schema.org JSON-LD
   const productJsonLd = model
@@ -597,7 +619,7 @@ export default function ProductDetailsPage({
     : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f1419] via-[#1a1f2e] to-[#0f1419]">
+    <div className="min-h-screen bg-gradient-to-br from-[#0f1419] via-[#1a1f2e] to-[#0f1419] text-white">
       {productJsonLd && (
         <script
           type="application/ld+json"
@@ -606,18 +628,20 @@ export default function ProductDetailsPage({
       )}
       <UnifiedNavbar />
 
-      {/* Hero Section - Modern Full-Screen Design */}
+      {/* Hero Section - Modern Full-Screen Design with Parallax */}
       <section
-        className="relative bg-transparent min-h-screen w-full flex items-start justify-center transition-opacity duration-500 pt-20"
+        className="sticky top-0 h-screen w-full flex items-start justify-center pt-20 overflow-hidden z-0"
         style={{
-          opacity: Math.max(0, 1 - scrollY / (isMobile ? 500 : 600)),
+          opacity: Math.max(0, 1 - scrollY / (isMobile ? 600 : 800)),
+          transform: `translateY(${scrollY * 0.4}px) scale(${1 - scrollY * 0.0003})`,
         }}
       >
         <div className="relative w-full h-auto min-h-[calc(100vh-80px)] py-8 px-4 sm:px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-16">
           {/* Hero Image - Full responsive */}
           {heroImageUrl && (
             <div className="w-full lg:w-1/2 flex items-center justify-center">
-              <div className="relative w-full max-w-md lg:max-w-none">
+              <div className="relative w-full max-w-md lg:max-w-none" style={{ animation: 'heroFloat 6s ease-in-out infinite', perspective: '1000px' }}>
+                <div className="absolute -inset-8 bg-gradient-to-br from-[#1b3caf]/20 to-[#0f9fdf]/10 blur-3xl -z-10 rounded-full" style={{ animation: 'heroPulse 4s ease-in-out infinite alternate' }} />
                 <Image
                   src={
                     pickVariantUrl(
@@ -660,20 +684,22 @@ export default function ProductDetailsPage({
               <div className="h-1.5 w-24 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] rounded-full" />
             </div>
 
-            {/* Price */}
-            <div>
+            {/* Price with fixed height to prevent jumping */}
+            <div className="min-h-[100px] flex flex-col justify-center">
               <p className="text-sm uppercase tracking-widest text-[#b0b0b0] mb-2">
                 {hasVariants ? "Twoja konfiguracja" : "Cena startowa"}
               </p>
-              <p className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf]">
+              <p className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] mb-2">
                 {hasVariants ? "" : "Od "}
                 {formatPrice(totalPrice)} PLN
               </p>
-              {hasVariants && totalPrice !== Number(model.price) && (
-                <p className="text-sm text-[#8b92a9] mt-1 line-through">
-                  Cena bazowa: {formatPrice(Number(model.price))} PLN
-                </p>
-              )}
+              <div className="h-6">
+                {hasVariants && totalPrice !== Number(model.price) && (
+                  <p className="text-sm text-[#8b92a9] line-through animate-in fade-in slide-in-from-top-1">
+                    Cena bazowa: {formatPrice(Number(model.price))} PLN
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Variant Configurator */}
@@ -778,14 +804,32 @@ export default function ProductDetailsPage({
         </div>
 
         {/* Scroll Down Arrow - Animated */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <ChevronDown className="w-8 h-8 text-[#1b3caf] drop-shadow-lg" />
-        </div>
+        {/* Scroll Down Arrow - Animated */}
+        <button
+          onClick={scrollToContent}
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce cursor-pointer z-20 hover:text-white transition-colors"
+          aria-label="Scroll down"
+        >
+          <ChevronDown className="w-10 h-10 text-[#1b3caf] drop-shadow-lg" />
+        </button>
       </section>
 
-      {/* Main Content */}
-      <main className="w-full bg-gradient-to-b from-transparent via-[#1b3caf]/5 to-transparent">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      {/* Main Content - Slides over Hero */}
+      <main
+        id="main-content"
+        className="relative z-10 w-full bg-gradient-to-b from-[#0f1419] via-[#1a1f2e] to-[#0f1419] transition-transform duration-700 ease-out"
+        style={{
+          transform: `translateY(${Math.max(0, 100 - scrollY / 8)}px)`,
+        }}
+      >
+        {/* Subtle decorative line */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-px bg-gradient-to-r from-transparent via-[#1b3caf]/30 to-transparent" />
+
+        {/* Background glow effects */}
+        <div className="absolute top-40 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[#1b3caf]/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-[60%] right-0 w-[400px] h-[400px] bg-[#0f9fdf]/3 rounded-full blur-[100px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative z-10">
           {/* Gallery & Specs Grid - Modern Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
             {/* Gallery - Left side, spans 2 columns */}
@@ -793,17 +837,25 @@ export default function ProductDetailsPage({
               {/* Main Image (Gallery) with Navigation Arrows */}
               <div className="relative group">
                 {galleryImageUrl ? (
-                  <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-[#242d3d] to-[#1a1f2e] rounded-2xl overflow-hidden border border-white/10">
-                    <img
+                  <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-[#1a1f2e] via-[#242d3d] to-[#1a1f2e] rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-black/30">
+                    {/* Decorative corner accents */}
+                    <div className="absolute top-0 left-0 w-16 h-16 border-t-2 border-l-2 border-[#1b3caf]/30 rounded-tl-2xl pointer-events-none z-10" />
+                    <div className="absolute bottom-0 right-0 w-16 h-16 border-b-2 border-r-2 border-[#0f9fdf]/30 rounded-br-2xl pointer-events-none z-10" />
+
+                    <Image
                       src={
                         pickVariantUrl(effectiveImages[selectedImageIndex]) ||
                         galleryImageUrl
                       }
                       alt={model.name}
-                      className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
-                      loading="lazy"
+                      fill
+                      className="object-contain p-6 transition-all duration-700 group-hover:scale-[1.03]"
+                      sizes="(max-width: 1024px) 100vw, 66vw"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0f1419]/40 via-transparent to-transparent pointer-events-none" />
+                    {/* Bottom gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0f1419]/50 via-transparent to-transparent pointer-events-none" />
+                    {/* Subtle inner glow */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#1b3caf]/5 via-transparent to-[#0f9fdf]/5 pointer-events-none" />
 
                     {/* Left Arrow */}
                     {effectiveImages.length > 1 && (
@@ -815,9 +867,9 @@ export default function ProductDetailsPage({
                               : selectedImageIndex - 1,
                           )
                         }
-                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition duration-300 z-10 backdrop-blur-sm border border-white/20"
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-[#1b3caf]/80 text-white p-3 rounded-xl transition-all duration-300 z-10 backdrop-blur-md border border-white/10 opacity-0 group-hover:opacity-100 hover:scale-110"
                       >
-                        <ChevronLeft className="w-6 h-6" />
+                        <ChevronLeft className="w-5 h-5" />
                       </button>
                     )}
 
@@ -831,29 +883,29 @@ export default function ProductDetailsPage({
                               : selectedImageIndex + 1,
                           )
                         }
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition duration-300 z-10 backdrop-blur-sm border border-white/20"
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-[#1b3caf]/80 text-white p-3 rounded-xl transition-all duration-300 z-10 backdrop-blur-md border border-white/10 opacity-0 group-hover:opacity-100 hover:scale-110"
                       >
-                        <ChevronRight className="w-6 h-6" />
+                        <ChevronRight className="w-5 h-5" />
                       </button>
                     )}
 
                     {/* Zoom button */}
                     <button
                       onClick={() => setLightboxOpen(true)}
-                      className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition duration-300 z-10 backdrop-blur-sm border border-white/20"
+                      className="absolute top-4 right-4 bg-black/40 hover:bg-[#1b3caf]/80 text-white p-2.5 rounded-xl transition-all duration-300 z-10 backdrop-blur-md border border-white/10 opacity-0 group-hover:opacity-100 hover:scale-110"
                     >
                       <Maximize2 className="w-5 h-5" />
                     </button>
 
                     {/* Image counter */}
                     {effectiveImages.length > 1 && (
-                      <div className="absolute bottom-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm border border-white/20">
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-1.5 rounded-full text-xs font-medium backdrop-blur-md border border-white/10 tracking-wider">
                         {selectedImageIndex + 1} / {effectiveImages.length}
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="w-full aspect-[16/9] bg-gradient-to-br from-[#242d3d] to-[#1f2e] rounded-2xl flex items-center justify-center border border-white/10">
+                  <div className="w-full aspect-[16/9] bg-gradient-to-br from-[#242d3d] to-[#1a1f2e] rounded-2xl flex items-center justify-center border border-white/10">
                     <span className="text-[#6b7280]">Brak zdjęcia</span>
                   </div>
                 )}
@@ -861,15 +913,15 @@ export default function ProductDetailsPage({
 
               {/* Thumbnails */}
               {effectiveImages.length > 1 && (
-                <div className="flex gap-3 overflow-x-auto pb-2">
-                  {effectiveImages.map((image: any, index: number) => (
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                  {effectiveImages.map((image: { id?: string; url: string; alt: string; variants?: string[] | null }, index: number) => (
                     <button
                       key={image.id || index}
                       onClick={() => setSelectedImageIndex(index)}
-                      className={`flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 transition duration-300 ${
+                      className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all duration-300 ${
                         selectedImageIndex === index
-                          ? "border-[#1b3caf] shadow-lg shadow-[#1b3caf]/20"
-                          : "border-white/10 hover:border-[#1b3caf]/50"
+                          ? "border-[#1b3caf] shadow-lg shadow-[#1b3caf]/30 scale-105"
+                          : "border-white/10 hover:border-[#1b3caf]/40 opacity-60 hover:opacity-100"
                       }`}
                     >
                       <img
@@ -878,6 +930,9 @@ export default function ProductDetailsPage({
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
+                      {selectedImageIndex === index && (
+                        <div className="absolute inset-0 bg-[#1b3caf]/10 pointer-events-none" />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -913,7 +968,7 @@ export default function ProductDetailsPage({
                 {/* Sidebar Variant Configurator */}
                 {hasVariants && (
                   <div className="mb-6 pb-6 border-b border-white/10 space-y-3">
-                    {model.variantGroups!.map((group) => {
+                    {model.variantGroups!.map((group: { id: string; name: string; options: any[] }) => {
                       const selectedOptId = selectedVariants[group.id];
                       return (
                         <div key={group.id} className="space-y-1.5">
@@ -921,7 +976,7 @@ export default function ProductDetailsPage({
                             {group.name}
                           </p>
                           <div className="flex flex-wrap gap-1.5">
-                            {group.options.map((opt) => {
+                            {group.options.map((opt: { id: string; priceModifier: number; name: string }) => {
                               const isSelected = selectedOptId === opt.id;
                               const isBase =
                                 (Number(opt.priceModifier) || 0) === 0;
@@ -1308,11 +1363,12 @@ export default function ProductDetailsPage({
                         <div
                           className={`relative h-full transform transition-all duration-700 ease-out ${idx % 2 === 0 ? "group-hover:translate-x-2" : "group-hover:-translate-x-2"}`}
                         >
-                          <img
+                          <Image
                             src={section.image.url}
                             alt={section.image.alt || section.title}
-                            className="w-full h-full object-contain group-hover:scale-105 transition duration-700 ease-out"
-                            loading="lazy"
+                            fill
+                            className="object-contain group-hover:scale-105 transition duration-700 ease-out"
+                            sizes="(max-width: 1024px) 100vw, 50vw"
                           />
                         </div>
                       </div>
@@ -1365,10 +1421,10 @@ export default function ProductDetailsPage({
                       {formatPrice(Number(model.price))} PLN
                     </span>
                   </div>
-                  {model.variantGroups?.map((group) => {
+                  {model.variantGroups?.map((group: { id: string; options: any[] }) => {
                     const selectedOptId = selectedVariants[group.id];
                     const opt = group.options.find(
-                      (o) => o.id === selectedOptId,
+                      (o: { id: string; priceModifier: number; name: string }) => o.id === selectedOptId,
                     );
                     if (!opt || (Number(opt.priceModifier) || 0) === 0)
                       return null;
@@ -1449,7 +1505,7 @@ export default function ProductDetailsPage({
                 Cechy produktu
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {displayedFeatures.map((f: any) => (
+                {displayedFeatures.map((f: { id: string; label: string; display: string }) => (
                   <div
                     key={f.id}
                     className="p-4 bg-white/5 rounded-xl border border-white/10"
@@ -1476,7 +1532,7 @@ export default function ProductDetailsPage({
                 Sprawdź kompatybilne produkty
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {accessories.map((acc) => (
+                {accessories.map((acc: { id: string; name: string; description: string | null; price: number | null; imageUrl: string | null }) => (
                   <Link
                     key={acc.id}
                     href={`/products/${acc.id}`}
@@ -1484,10 +1540,12 @@ export default function ProductDetailsPage({
                   >
                     <div className="aspect-square bg-white/5 relative overflow-hidden">
                       {acc.imageUrl ? (
-                        <img
+                        <Image
                           src={acc.imageUrl}
                           alt={acc.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
@@ -1557,7 +1615,9 @@ export default function ProductDetailsPage({
                   key={i}
                   className="group p-8 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 hover:border-[#1b3caf]/50 transition-all duration-300 rounded-xl hover:-translate-y-1 relative overflow-hidden"
                 >
-                  {/* Large icon in background */}
+                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <feature.Icon className="w-24 h-24 text-[#1b3caf]" />
+                  </div>
                   <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <feature.Icon className="w-24 h-24 text-[#1b3caf]" />
                   </div>
@@ -1697,12 +1757,16 @@ export default function ProductDetailsPage({
           )}
 
           {/* Image */}
-          <img
-            src={galleryImageUrl}
-            alt={model.name}
-            className="max-w-5xl max-h-[90vh] object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div className="relative w-full max-w-5xl h-[90vh]">
+            <Image
+              src={galleryImageUrl}
+              alt={model.name}
+              fill
+              className="object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+              sizes="100vw"
+            />
+          </div>
 
           {/* Counter */}
           {model.images && model.images.length > 1 && (
