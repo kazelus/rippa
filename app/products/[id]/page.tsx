@@ -678,7 +678,7 @@ export default function ProductDetailsPage({
           <div className="w-full lg:w-1/2 flex flex-col justify-center gap-6 lg:gap-8">
             {/* Main Title */}
             <div>
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] via-white to-[#0f9fdf] tracking-tight leading-tight mb-4">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] via-white to-[#0f9fdf] tracking-tight leading-tight mb-4">
                 {model.name}
               </h1>
               <div className="h-1.5 w-24 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] rounded-full" />
@@ -761,9 +761,9 @@ export default function ProductDetailsPage({
               const quickSpecs = getQuickSpecs();
               if (quickSpecs.length === 0) return null;
               const cols =
-                quickSpecs.length <= 3
+                quickSpecs.length <= 2
                   ? `grid-cols-${quickSpecs.length}`
-                  : "grid-cols-2 sm:grid-cols-4";
+                  : "grid-cols-2 xl:grid-cols-4";
               return (
                 <div
                   className={`grid ${cols} gap-3 py-4 border-t border-b border-white/10`}
@@ -774,7 +774,7 @@ export default function ProductDetailsPage({
                         {qs.label}
                       </p>
                       <p
-                        className={`text-lg font-bold ${qs.hasOverride ? "text-[#0f9fdf]" : "text-white"}`}
+                        className={`text-base lg:text-lg font-bold ${qs.hasOverride ? "text-[#0f9fdf]" : "text-white"}`}
                       >
                         {qs.value}
                         {qs.unit ? ` ${qs.unit}` : ""}
@@ -831,9 +831,9 @@ export default function ProductDetailsPage({
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative z-10">
           {/* Gallery & Specs Grid - Modern Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 lg:gap-12">
             {/* Gallery - Left side, spans 2 columns */}
-            <div className="lg:col-span-2 flex flex-col gap-6">
+            <div className="xl:col-span-2 flex flex-col gap-6">
               {/* Main Image (Gallery) with Navigation Arrows */}
               <div className="relative group">
                 {galleryImageUrl ? (
@@ -940,9 +940,9 @@ export default function ProductDetailsPage({
             </div>
 
             {/* Info Sidebar - Sticky & Premium */}
-            <div className="flex flex-col gap-8 lg:sticky lg:top-24">
+            <div className="flex flex-col gap-8 xl:sticky xl:top-24">
               {/* Sticky Card */}
-              <div className="bg-gradient-to-br from-white/10 to-white/5 p-6 lg:p-8 rounded-2xl border border-white/10 backdrop-blur-sm">
+              <div className="bg-gradient-to-br from-white/10 to-white/5 p-5 lg:p-6 xl:p-8 rounded-2xl border border-white/10 backdrop-blur-sm">
                 {/* Availability Badge */}
                 <div className="mb-6 pb-6 border-b border-white/10">
                   <span className="inline-block px-3 py-1 bg-green-500/20 text-green-300 text-xs font-bold rounded-full border border-green-500/30">
