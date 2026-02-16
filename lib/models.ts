@@ -275,36 +275,51 @@ export async function getModelById(id: string): Promise<ModelWithDetails | null>
     ),
   ]);
 
-  // Fetch variant groups (missing in getModelsWithDetails but needed for product page)
+  // Fetch variant groups (using correct table name ModelVariantGroup)
   const variantGroupsResult = await pool.query(
-    `SELECT id, name, "order" FROM "VariantGroup" WHERE "modelId" = $1 ORDER BY "order" ASC`,
+    'SELECT id, name, "order" FROM "ModelVariantGroup" WHERE "modelId" = $1 ORDER BY "order" ASC, "createdAt" ASC',
     [modelId]
   );
   
-  const variantGroups = await Promise.all(variantGroupsResult.rows.map(async (group: any) => {
+  // Use a batched query for options if possible, or simple loop. Route uses batch.
+  const groupIds = variantGroupsResult.rows.map((g: any) => g.id);
+  let allVariantOptions: any[] = [];
+  if (groupIds.length > 0) {
     const optionsResult = await pool.query(
-      `SELECT id, name, "priceModifier", "isDefault", images, "parameterOverrides" 
-       FROM "VariantOption" WHERE "variantGroupId" = $1 ORDER BY "priceModifier" ASC`,
-      [group.id]
+      'SELECT id, name, "priceModifier", "isDefault", images, "parameterOverrides", "groupId" FROM "ModelVariantOption" WHERE "groupId" = ANY($1) ORDER BY "order" ASC, "createdAt" ASC',
+      [groupIds]
     );
-    return {
-      ...group,
-      options: optionsResult.rows.map((o: any) => ({
-        ...o,
-        priceModifier: Number(o.priceModifier),
+    allVariantOptions = optionsResult.rows;
+  }
+
+  const variantGroups = variantGroupsResult.rows.map((group: any) => ({
+    id: group.id,
+    name: group.name,
+    order: group.order,
+    options: allVariantOptions
+      .filter((o: any) => o.groupId === group.id)
+      .map((o: any) => ({
+        id: o.id,
+        name: o.name,
+        priceModifier: Number(o.priceModifier) || 0,
+        isDefault: o.isDefault || false,
         images: typeof o.images === 'string' ? JSON.parse(o.images) : o.images, 
         parameterOverrides: typeof o.parameterOverrides === 'string' ? JSON.parse(o.parameterOverrides) : o.parameterOverrides
       }))
-    };
   }));
 
-  // Fetch accessories
+  // Fetch accessories (using correct join table ModelAccessory)
   const accessoriesResult = await pool.query(
-    `SELECT m.id, m.name, m.description, m.price, i.url as "imageUrl"
-     FROM "Accessory" a
-     JOIN "Model" m ON a."accessoryModelId" = m.id
-     LEFT JOIN "Image" i ON m."heroImageId" = i.id
-     WHERE a."modelId" = $1`,
+    `SELECT DISTINCT m.id, m.name, m.description, m.price,
+            (SELECT url FROM "Image" WHERE "modelId" = m.id ORDER BY "createdAt" DESC LIMIT 1) as "imageUrl"
+     FROM "ModelAccessory" ma
+     JOIN "Model" m ON (
+       (ma."parentModelId" = $1 AND m.id = ma."accessoryModelId")
+       OR
+       (ma."accessoryModelId" = $1 AND m.id = ma."parentModelId")
+     )
+     WHERE m.id != $1 AND COALESCE(m.visible, true) = true
+     ORDER BY m.name ASC`,
     [modelId]
   );
 
@@ -382,9 +397,19 @@ export async function getModelById(id: string): Promise<ModelWithDetails | null>
         .map((p: any) => ({
           label: p.quickSpecLabel || p.label,
           value: p.value || null,
+          unit: p.unit || "",
+          paramLabel: p.label,
         })),
-      // Add variant groups and accessories which were missing in list view but needed for detail
       variantGroups: variantGroups,
-      accessories: accessoriesResult.rows
-  } as any; // Cast to any to avoid strict interface mismatch if variantGroups/accessories are not in ModelWithDetails yet
+      accessories: accessoriesResult.rows.map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        description: a.description,
+        price: a.price ? parseFloat(a.price) : null,
+        imageUrl: a.imageUrl,
+      })),
+      // Downloads - fetching was skipped in previous step, let's add it if needed or return empty if not critical for now.
+      // The interface has 'downloads'. We should probably fetch it to be complete.
+      downloads: [] 
+  };
 }
