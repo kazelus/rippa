@@ -320,7 +320,9 @@ export default function ProductDetailsPage({
   const scrollToContent = () => {
     const content = document.getElementById("main-content");
     if (content) {
-      content.scrollIntoView({ behavior: "smooth" });
+      const yOffset = -100; // Navbar height + breathing room
+      const y = content.getBoundingClientRect().top + window.scrollY + yOffset;
+      window.scrollTo({ top: y, behavior: "smooth" });
     }
   };
 

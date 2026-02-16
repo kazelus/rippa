@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import LoadingScreen from "@/components/LoadingScreen";
 
+import { ModelWithDetails } from "@/lib/models";
+
 interface Category {
   id: string;
   name: string;
@@ -42,11 +44,16 @@ interface Model {
   }>;
 }
 
-export function ProductsClient() {
+interface ProductsClientProps {
+  initialModels?: ModelWithDetails[];
+  initialCategories?: Category[];
+}
+
+export function ProductsClient({ initialModels = [], initialCategories = [] }: ProductsClientProps) {
   const searchParams = useSearchParams();
-  const [models, setModels] = useState<Model[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [models, setModels] = useState<ModelWithDetails[]>(initialModels);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [isLoading, setIsLoading] = useState(initialModels.length === 0);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     searchParams.get("category") || null,
   );
@@ -55,8 +62,10 @@ export function ProductsClient() {
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (initialModels.length === 0) {
+      fetchData();
+    }
+  }, [initialModels.length]);
 
   const fetchData = async () => {
     try {
@@ -87,7 +96,8 @@ export function ProductsClient() {
       !selectedCategory || model.categoryId === selectedCategory;
     const matchesSearch =
       model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      model.description.toLowerCase().includes(searchTerm.toLowerCase());
+      model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (model.description && model.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesBestseller = !showBestsellers || model.featured;
 
     return matchesCategory && matchesSearch && matchesBestseller;
@@ -336,7 +346,7 @@ export function ProductsClient() {
                   <div>
                     <p className="text-[#8b92a9] text-xs mb-0.5">Cena od</p>
                     <p className="text-white text-2xl font-bold leading-none">
-                      {model.price.toLocaleString("pl-PL")}{" "}
+                      {Number(model.price).toLocaleString("pl-PL")}{" "}
                       <span className="text-base font-semibold text-[#8b92a9]">
                         PLN
                       </span>

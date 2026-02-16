@@ -4,6 +4,12 @@ import { Footer } from "@/components/Footer";
 import { ProductsClient } from "./ProductsClient";
 import LoadingScreen from "@/components/LoadingScreen";
 
+import { getModelsWithDetails } from "@/lib/models";
+import { getCategories } from "@/lib/categories";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 60; // Revalidate every minute
+
 // Static breadcrumbs for Products page
 const breadcrumbsJsonLd = {
   '@context': 'https://schema.org',
@@ -24,7 +30,12 @@ const breadcrumbsJsonLd = {
   ],
 };
 
-export default function ProductsPage() {
+export default async function ProductsPage() {
+  const [initialModels, initialCategories] = await Promise.all([
+    getModelsWithDetails(),
+    getCategories(),
+  ]);
+
   return (
     <>
       <script
@@ -43,7 +54,7 @@ export default function ProductsPage() {
       <Suspense
           fallback={<LoadingScreen message="Ładowanie produktów..." fullScreen={false} />}
       >
-        <ProductsClient />
+        <ProductsClient initialModels={initialModels} initialCategories={initialCategories} />
       </Suspense>
     </div>
     <Footer />

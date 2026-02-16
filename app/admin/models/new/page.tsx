@@ -114,6 +114,7 @@ export default function AddModelPage() {
   const [fileDragActive, setFileDragActive] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -484,7 +485,7 @@ export default function AddModelPage() {
       setSuccess("Model został pomyślnie dodany!");
       // Clear draft and reset form
       try {
-        sessionStorage.removeItem("admin-model-new-draft");
+        localStorage.removeItem("admin-model-new-draft");
       } catch (err) {}
       setFormData({
         name: "",
@@ -517,7 +518,7 @@ export default function AddModelPage() {
   // Load draft on mount
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem(storageKey);
+      const raw = localStorage.getItem(storageKey);
       if (!raw) return;
       const draft = JSON.parse(raw);
       if (draft.formData) setFormData((prev) => ({ ...prev, ...draft.formData }));
@@ -528,13 +529,17 @@ export default function AddModelPage() {
       if (draft.parameterValues) setParameterValues(draft.parameterValues);
       if (draft.variantGroups) setVariantGroups(draft.variantGroups);
       if (typeof draft.activeTab === "number") setActiveTab(draft.activeTab);
+      if (typeof draft.activeTab === "number") setActiveTab(draft.activeTab);
     } catch (err) {
       // ignore
+    } finally {
+      setIsLoaded(true);
     }
   }, []);
 
   // Save draft on relevant changes
   useEffect(() => {
+    if (!isLoaded) return;
     const draft = {
       formData,
       images,
@@ -546,9 +551,12 @@ export default function AddModelPage() {
       activeTab,
     };
     try {
-      sessionStorage.setItem(storageKey, JSON.stringify(draft));
+      localStorage.setItem(storageKey, JSON.stringify(draft));
     } catch (err) {}
-  }, [formData, images, sections, downloads, featureValues, parameterValues, variantGroups, activeTab]);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(draft));
+    } catch (err) {}
+  }, [isLoaded, formData, images, sections, downloads, featureValues, parameterValues, variantGroups, activeTab]);
 
   const tabs = [
     { id: 0, name: "Podstawowe" },

@@ -106,31 +106,9 @@ export default function EditModelPage({
   // Persist draft to sessionStorage to avoid losing state on remount
   const storageKey = `admin-model-edit-${modelId}`;
 
-  // Load draft if available (after modelId is known)
-  useEffect(() => {
-    if (!modelId) return;
-    try {
-      const raw = sessionStorage.getItem(storageKey);
-      if (!raw) return;
-      const draft = JSON.parse(raw);
-      // Merge draft with fetched model data where sensible
-      if (draft.formData) setFormData((prev) => ({ ...prev, ...draft.formData }));
-      if (draft.images) setImages(draft.images);
-      if (draft.heroImageId) setHeroImageId(draft.heroImageId);
-      if (draft.sections) setSections(draft.sections);
-      if (draft.downloads) setDownloads(draft.downloads);
-      if (draft.featureValues) setFeatureValues(draft.featureValues);
-      if (draft.parameterValues) setParameterValues(draft.parameterValues);
-      if (draft.variantGroups) setVariantGroups(draft.variantGroups);
-      if (typeof draft.activeTab === "number") setActiveTab(draft.activeTab);
-    } catch (err) {
-      // ignore parse errors
-    }
-  }, [modelId]);
-
   // Save draft on changes
   useEffect(() => {
-    if (!modelId) return;
+    if (!modelId || isLoading) return;
     const draft = {
       formData,
       images,
@@ -143,9 +121,9 @@ export default function EditModelPage({
       activeTab,
     };
     try {
-      sessionStorage.setItem(storageKey, JSON.stringify(draft));
+      localStorage.setItem(storageKey, JSON.stringify(draft));
     } catch (err) {}
-  }, [modelId, formData, images, heroImageId, sections, downloads, featureValues, parameterValues, variantGroups, activeTab]);
+  }, [modelId, isLoading, formData, images, heroImageId, sections, downloads, featureValues, parameterValues, variantGroups, activeTab]);
 
   // Accessories state (linked model IDs)
   const [linkedAccessoryIds, setLinkedAccessoryIds] = useState<string[]>([]);
@@ -342,26 +320,38 @@ export default function EditModelPage({
         throw new Error("Failed to fetch model");
       }
       const data = await response.json();
+
+      // Check for saved draft
+      let draft: any = null;
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (raw) draft = JSON.parse(raw);
+      } catch {}
+
       setFormData({
-        name: data.name,
-        description: data.description || "",
-        heroDescription: data.heroDescription || "",
-        price: data.price,
-        featured: data.featured || false,
-        visible: data.visible !== false,
-        categoryId: data.categoryId || "",
-        heroImageId: data.heroImageId || "",
+        name: draft?.formData?.name ?? data.name,
+        description: draft?.formData?.description ?? data.description ?? "",
+        heroDescription: draft?.formData?.heroDescription ?? data.heroDescription ?? "",
+        price: draft?.formData?.price ?? data.price,
+        featured: draft?.formData?.featured ?? data.featured ?? false,
+        visible: draft?.formData?.visible ?? (data.visible !== false),
+        categoryId: draft?.formData?.categoryId ?? data.categoryId ?? "",
+        heroImageId: draft?.formData?.heroImageId ?? data.heroImageId ?? "",
       });
-      setImages(data.images || []);
-      setHeroImageId(data.heroImageId || "");
-      setSections(data.sections || [{ title: "", text: "" }]);
-      setDownloads(data.downloads || []);
-      // Load feature values from API response (if present)
+      setImages(draft?.images ?? data.images ?? []);
+      setHeroImageId(draft?.heroImageId ?? data.heroImageId ?? "");
+      setSections(draft?.sections ?? data.sections ?? [{ title: "", text: "" }]);
+      setDownloads(draft?.downloads ?? data.downloads ?? []);
+      
+      // Load feature values from API response (if present) or draft
       if (data.features && Array.isArray(data.features)) {
-        const vals: Record<string, any> = {};
-        data.features.forEach((f: any) => {
-          vals[f.id] = f.value ?? null;
-        });
+        const vals: Record<string, any> = draft?.featureValues ?? {};
+        // If no draft values, fill from API
+        if (!draft?.featureValues) {
+            data.features.forEach((f: any) => {
+            vals[f.id] = f.value ?? null;
+            });
+        }
         setFeatureValues(vals);
         // set category features definitions too
         const defs = data.features.map((f: any) => ({
@@ -373,12 +363,15 @@ export default function EditModelPage({
         }));
         setCategoryFeatures(defs);
       }
-      // Load parameter values from API response (if present)
+      
+      // Load parameter values from API response (if present) or draft
       if (data.parameters && Array.isArray(data.parameters)) {
-        const vals: Record<string, any> = {};
-        data.parameters.forEach((p: any) => {
-          vals[p.id] = p.value ?? null;
-        });
+        const vals: Record<string, any> = draft?.parameterValues ?? {};
+        if (!draft?.parameterValues) {
+            data.parameters.forEach((p: any) => {
+            vals[p.id] = p.value ?? null;
+            });
+        }
         setParameterValues(vals);
         // set category parameters definitions too
         const defs = data.parameters.map((p: any) => ({
@@ -394,24 +387,35 @@ export default function EditModelPage({
 
       // Load variant groups
       try {
-        const varRes = await fetch(`/api/admin/models/${modelId}/variants`);
-        if (varRes.ok) {
-          const varData = await varRes.json();
-          setVariantGroups(
-            (varData || []).map((g: any) => ({
-              name: g.name,
-              options: (g.options || []).map((o: any) => ({
-                name: o.name,
-                priceModifier: o.priceModifier || 0,
-                isDefault: o.isDefault || false,
-                images: o.images || [],
-                parameterOverrides: o.parameterOverrides || {},
-              })),
-            })),
-          );
+        // If draft has variants, use them ? 
+        // Variants fetching is separate call.
+        // We probably want to prioritize draft if exists.
+        if (draft?.variantGroups) {
+             setVariantGroups(draft.variantGroups);
+        } else {
+            const varRes = await fetch(`/api/admin/models/${modelId}/variants`);
+            if (varRes.ok) {
+            const varData = await varRes.json();
+            setVariantGroups(
+                (varData || []).map((g: any) => ({
+                name: g.name,
+                options: (g.options || []).map((o: any) => ({
+                    name: o.name,
+                    priceModifier: o.priceModifier || 0,
+                    isDefault: o.isDefault || false,
+                    images: o.images || [],
+                    parameterOverrides: o.parameterOverrides || {},
+                })),
+                })),
+            );
+            }
         }
       } catch (err) {
         console.error("Error fetching variants:", err);
+      }
+      
+      if (typeof draft?.activeTab === "number") {
+          setActiveTab(draft.activeTab);
       }
 
       // Load linked accessories
@@ -736,7 +740,7 @@ export default function EditModelPage({
       setSuccess("Model został pomyślnie zaktualizowany!");
       // Clear draft and redirect to models list
       try {
-        sessionStorage.removeItem(storageKey);
+        localStorage.removeItem(storageKey);
       } catch (err) {}
       setTimeout(() => {
         router.push("/admin/models");
