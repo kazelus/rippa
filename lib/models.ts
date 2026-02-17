@@ -44,6 +44,7 @@ export interface ModelWithDetails extends Model {
     isQuickSpec: boolean;
     quickSpecOrder: number;
     quickSpecLabel?: string | null;
+    group?: string;
   }>;
   quickSpecs: Array<{
     label: string;
@@ -267,10 +268,10 @@ export async function getModelById(id: string): Promise<ModelWithDetails | null>
       [modelId]
     ),
     pool.query(
-      `SELECT pd.id as parameter_id, pd.key, pd.label, pd.unit, pd.type, pd.options, pd."isQuickSpec", pd."quickSpecOrder", pd."quickSpecLabel", ppv.value, ppv."productId"
+      `SELECT pd.id as parameter_id, pd.key, pd.label, pd.unit, pd.type, pd.options, pd."group", pd."isQuickSpec", pd."quickSpecOrder", pd."quickSpecLabel", ppv.value, ppv."productId"
        FROM "ProductParameterValue" ppv
        JOIN "ParameterDefinition" pd ON ppv."parameterId" = pd.id
-       WHERE ppv."productId" = $1`,
+       WHERE ppv."productId" = $1 ORDER BY pd."order" ASC`,
       [modelId]
     ),
   ]);
@@ -382,6 +383,7 @@ export async function getModelById(id: string): Promise<ModelWithDetails | null>
         label: p.label,
         unit: p.unit,
         type: p.type,
+        group: p.group,
         options: p.options ? JSON.parse(p.options) : null,
         value: p.value || null,
         isQuickSpec: p.isQuickSpec || false,
@@ -411,5 +413,5 @@ export async function getModelById(id: string): Promise<ModelWithDetails | null>
       // Downloads - fetching was skipped in previous step, let's add it if needed or return empty if not critical for now.
       // The interface has 'downloads'. We should probably fetch it to be complete.
       downloads: [] 
-  };
+  } as any;
 }
