@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
+import { uploadFileDirectly } from "@/lib/upload";
 import { Button } from "@/components/Button";
 import RichTextEditor from "@/components/RichTextEditor";
 import Link from "next/link";
@@ -83,21 +84,11 @@ export default function AddModelPage() {
         setImageUploadError("Plik jest za duży. Maksymalnie 20MB na plik.");
         return;
       }
-      const formDataImage = new FormData();
-      formDataImage.append("file", file);
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formDataImage,
-      });
-      if (!response.ok) {
-        if (response.status === 413) throw new Error("Plik jest za duży (limit serwera to 4.5MB).");
-        throw new Error("Błąd podczas upload'u");
-      }
-      const data = await response.json();
+      const { url } = await uploadFileDirectly(file);
       setSections((secs) =>
         secs.map((s, i) =>
           i === idx
-            ? { ...s, image: { url: data.url, alt: file.name.split(".")[0] } }
+            ? { ...s, image: { url, alt: file.name.split(".")[0] } }
             : s,
         ),
       );
@@ -292,24 +283,8 @@ export default function AddModelPage() {
           setImageUploadError("Plik jest za duży. Maksymalnie 20MB na plik.");
           continue;
         }
-        const formDataImage = new FormData();
-        formDataImage.append("file", file);
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body: formDataImage,
-        });
-        if (!response.ok) {
-          let errorMsg = "Błąd podczas upload'u";
-          try {
-            const data = await response.json();
-            errorMsg = data.error || errorMsg;
-          } catch {
-            if (response.status === 413) errorMsg = "Plik jest za duży (limit hostingowy to 4.5MB).";
-          }
-          throw new Error(errorMsg);
-        }
-        const data = await response.json();
-        uploadedImages.push({ url: data.url, alt: file.name.split(".")[0] });
+        const { url } = await uploadFileDirectly(file);
+        uploadedImages.push({ url, alt: file.name.split(".")[0] });
       }
       setImages((prev) => [...prev, ...uploadedImages]);
       if ("target" in e) (e.target as HTMLInputElement).value = "";
@@ -373,35 +348,16 @@ export default function AddModelPage() {
         (e.target as HTMLInputElement).value = "";
         return;
       }
-      const formDataFile = new FormData();
-      formDataFile.append("file", file);
-      formDataFile.append("fileName", file.name);
       // modelId will be associated when saving the model
+      const { url } = await uploadFileDirectly(file, true); // true = isDownload (saves into downloads/ folder)
 
-      const response = await fetch("/api/downloads", {
-        method: "POST",
-        body: formDataFile,
-      });
-
-      if (!response.ok) {
-        let errorMsg = "Błąd podczas upload'u";
-        try {
-          const data = await response.json();
-          errorMsg = data.error || errorMsg;
-        } catch {
-          if (response.status === 413) errorMsg = "Plik jest za duży (limit hostingowy to 4.5MB).";
-        }
-        throw new Error(errorMsg);
-      }
-
-      const data = await response.json();
       setDownloads((prev) => [
         ...prev,
         {
-          name: data.name,
-          url: data.url,
-          fileType: data.fileType,
-          fileSize: data.fileSize,
+          name: file.name,
+          url,
+          fileType: file.name.split(".").pop()?.toLowerCase() || "unknown",
+          fileSize: file.size,
         },
       ]);
     } catch (err: any) {
