@@ -154,16 +154,16 @@ export default function EditModelPage({
   }, [status, router]);
 
   useEffect(() => {
-    if (session?.user) {
+    if (status === "authenticated") {
       fetchCategories();
     }
-  }, [session]);
+  }, [status]);
 
   useEffect(() => {
-    if (modelId && session?.user) {
+    if (modelId && status === "authenticated") {
       fetchModel();
     }
-  }, [modelId, session]);
+  }, [modelId, status]);
 
   // Fetch features when category changes
   useEffect(() => {

@@ -149,7 +149,7 @@ export default function AddModelPage() {
   }, [status, router]);
 
   useEffect(() => {
-    if (session?.user) {
+    if (status === "authenticated") {
       fetchCategories();
       // Fetch all models for accessories picker
       fetch("/api/models?all=true")
@@ -165,7 +165,7 @@ export default function AddModelPage() {
         })
         .catch((err) => console.error("Error fetching models:", err));
     }
-  }, [session]);
+  }, [status]);
 
   // Fetch features when category changes
   useEffect(() => {
