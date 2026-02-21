@@ -505,16 +505,16 @@ export function ProductClient({
 
       {/* Hero Section - Modern Full-Screen Design with Parallax */}
       <section
-        className="relative w-full flex items-start justify-center pt-24 pb-16 lg:pt-32 lg:pb-24 z-0 lg:min-h-screen"
+        className="sticky top-0 h-[100dvh] w-full flex items-start justify-center pt-16 md:pt-20 overflow-hidden z-0 bg-[#0f1419]"
         style={{
           opacity: Math.max(0.2, 1 - scrollY / (isMobile ? 600 : 800)),
           transform: `translateY(${scrollY * 0.4}px) scale(${1 - scrollY * 0.0003})`,
         }}
       >
-        <div className="relative w-full h-auto py-4 px-4 sm:px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16">
+        <div className="relative w-full h-full pb-16 pt-2 px-4 sm:px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-16">
           {/* Hero Image - Full responsive */}
           {heroImageUrl && (
-            <div className="w-full lg:w-1/2 flex items-center justify-center pt-8 lg:pt-0">
+            <div className="w-full lg:w-1/2 flex items-center justify-center flex-1 max-h-[40vh] lg:max-h-none min-h-0">
               <div className="relative w-full max-w-md lg:max-w-none" style={{ animation: 'heroFloat 6s ease-in-out infinite', perspective: '1000px' }}>
                 <div className="absolute -inset-8 bg-gradient-to-br from-[#1b3caf]/20 to-[#0f9fdf]/10 blur-3xl -z-10 rounded-full" style={{ animation: 'heroPulse 4s ease-in-out infinite alternate' }} />
                 <Image
@@ -543,43 +543,43 @@ export function ProductClient({
                       ?.blurDataUrl ??
                       undefined)
                   }
-                  className="w-full h-auto object-contain transition-transform duration-500 hover:scale-105"
+                  className="w-full h-full object-contain transition-transform duration-500 hover:scale-105 drop-shadow-2xl"
                 />
               </div>
             </div>
           )}
 
-          {/* Content - No box background, clean text */}
-          <div className="w-full lg:w-1/2 flex flex-col justify-center gap-6 lg:gap-8">
+          {/* Content - Compact text adjustments */}
+          <div className="w-full lg:w-1/2 flex flex-col justify-center gap-3 md:gap-6 lg:gap-8 flex-1 min-h-0">
             {/* Main Title */}
             <div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] via-white to-[#0f9fdf] tracking-tight leading-tight mb-4">
+              <h1 className="text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] via-white to-[#0f9fdf] tracking-tight leading-tight mb-2">
                 {model.name}
               </h1>
-              <div className="h-1.5 w-24 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] rounded-full" />
+              <div className="h-1 w-16 md:w-24 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] rounded-full" />
             </div>
 
-            {/* Price with fixed height to prevent jumping */}
-            <div className="min-h-[100px] flex flex-col justify-center">
-              <p className="text-sm uppercase tracking-widest text-[#b0b0b0] mb-2">
+            {/* Price section - compact */}
+            <div className="flex flex-col justify-center shrink-0">
+              <p className="text-[10px] md:text-sm uppercase tracking-widest text-[#b0b0b0] mb-0.5 md:mb-2">
                 {hasVariants ? "Twoja konfiguracja" : "Cena startowa"}
               </p>
-              <p className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] mb-2">
+              <p className="text-2xl sm:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] leading-none mb-1 md:mb-2">
                 {hasVariants ? "" : "Od "}
                 {formatPrice(totalPrice)} PLN
               </p>
-              <div className="h-6">
+              <div className="h-4 md:h-6">
                 {hasVariants && totalPrice !== Number(model.price) && (
-                  <p className="text-sm text-[#8b92a9] line-through animate-in fade-in slide-in-from-top-1">
+                  <p className="text-xs md:text-sm text-[#8b92a9] line-through animate-in fade-in slide-in-from-top-1">
                     Cena bazowa: {formatPrice(Number(model.price))} PLN
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Variant Configurator */}
+            {/* Variant Configurator (condensed) */}
             {hasVariants && (
-              <div className="space-y-3 py-3">
+              <div className="space-y-2 py-1 overflow-x-auto scrollbar-hide shrink-0">
                 {model.variantGroups!.map((group) => {
                   const selectedOptId = selectedVariants[group.id];
                   return (
@@ -626,8 +626,8 @@ export function ProductClient({
               </div>
             )}
 
-            {/* Description - Clean text without background */}
-            <p className="text-lg sm:text-xl text-[#d0d8e6] leading-relaxed font-light max-w-lg">
+            {/* Description - truncated if too long on mobile */}
+            <p className="text-sm md:text-lg lg:text-xl text-[#d0d8e6] leading-snug lg:leading-relaxed font-light line-clamp-2 md:line-clamp-4 max-w-lg shrink-1">
               {model.heroDescription || model.description}
             </p>
 
@@ -641,15 +641,15 @@ export function ProductClient({
                   : "grid-cols-2 xl:grid-cols-4";
               return (
                 <div
-                  className={`grid ${cols} gap-3 py-4 border-t border-b border-white/10`}
+                  className={`grid ${cols} gap-2 lg:gap-3 py-2 border-t border-b border-white/10 shrink-0`}
                 >
                   {quickSpecs.map((qs, i) => (
                     <div key={i}>
-                      <p className="text-xs uppercase tracking-wide text-[#8b92a9] mb-1">
+                      <p className="text-[10px] lg:text-xs uppercase tracking-wide text-[#8b92a9] mb-0.5">
                         {qs.label}
                       </p>
                       <p
-                        className={`text-base lg:text-lg font-bold ${qs.hasOverride ? "text-[#0f9fdf]" : "text-white"}`}
+                        className={`text-sm lg:text-lg font-bold ${qs.hasOverride ? "text-[#0f9fdf]" : "text-white"} leading-tight`}
                       >
                         {qs.value}
                         {qs.unit ? ` ${qs.unit}` : ""}
@@ -661,18 +661,18 @@ export function ProductClient({
             })()}
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <div className="flex flex-row gap-2 lg:gap-3 pt-2 shrink-0">
               <button
                 onClick={() => setQuoteModalOpen(true)}
-                className="px-8 py-3 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] hover:from-[#1b3caf]/80 hover:to-[#0f9fdf]/80 text-white font-bold rounded-lg transition duration-300 shadow-lg hover:shadow-[#1b3caf]/40 transform hover:scale-105"
+                className="flex-1 lg:flex-none px-4 lg:px-8 py-2.5 lg:py-3 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] hover:from-[#1b3caf]/80 hover:to-[#0f9fdf]/80 text-white text-sm lg:text-base font-bold rounded-lg transition duration-300 shadow-lg hover:shadow-[#1b3caf]/40 transform hover:scale-105"
               >
                 Zapytaj o cenę
               </button>
               <button
                 onClick={() => addToCompare()}
-                className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-lg transition duration-300 border border-white/20"
+                className="flex-1 lg:flex-none px-4 lg:px-8 py-2.5 lg:py-3 bg-white/10 hover:bg-white/20 text-white text-sm lg:text-base font-medium rounded-lg transition duration-300 border border-white/20"
               >
-                Dodaj do porównania
+                Porównaj
               </button>
             </div>
           </div>
@@ -681,10 +681,10 @@ export function ProductClient({
         {/* Scroll Down Arrow - Animated */}
         <button
           onClick={scrollToContent}
-          className="absolute -bottom-8 lg:bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce cursor-pointer z-20 hover:text-white transition-colors"
+          className="absolute bottom-2 lg:bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce cursor-pointer z-20 hover:text-white transition-colors"
           aria-label="Scroll down"
         >
-          <ChevronDown className="w-10 h-10 text-[#1b3caf] drop-shadow-lg" />
+          <ChevronDown className="w-8 h-8 lg:w-10 lg:h-10 text-[#1b3caf] drop-shadow-lg" />
         </button>
       </section>
 
