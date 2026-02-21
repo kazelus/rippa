@@ -505,16 +505,16 @@ export function ProductClient({
 
       {/* Hero Section - Modern Full-Screen Design with Parallax */}
       <section
-        className="sticky top-0 h-screen w-full flex items-start justify-center pt-20 overflow-hidden z-0"
+        className="relative w-full flex items-start justify-center pt-24 pb-16 lg:pt-32 lg:pb-24 z-0 lg:min-h-screen"
         style={{
-          opacity: Math.max(0, 1 - scrollY / (isMobile ? 600 : 800)),
+          opacity: Math.max(0.2, 1 - scrollY / (isMobile ? 600 : 800)),
           transform: `translateY(${scrollY * 0.4}px) scale(${1 - scrollY * 0.0003})`,
         }}
       >
-        <div className="relative w-full h-auto min-h-[calc(100vh-80px)] py-8 px-4 sm:px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-16">
+        <div className="relative w-full h-auto py-4 px-4 sm:px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16">
           {/* Hero Image - Full responsive */}
           {heroImageUrl && (
-            <div className="w-full lg:w-1/2 flex items-center justify-center">
+            <div className="w-full lg:w-1/2 flex items-center justify-center pt-8 lg:pt-0">
               <div className="relative w-full max-w-md lg:max-w-none" style={{ animation: 'heroFloat 6s ease-in-out infinite', perspective: '1000px' }}>
                 <div className="absolute -inset-8 bg-gradient-to-br from-[#1b3caf]/20 to-[#0f9fdf]/10 blur-3xl -z-10 rounded-full" style={{ animation: 'heroPulse 4s ease-in-out infinite alternate' }} />
                 <Image
@@ -679,10 +679,9 @@ export function ProductClient({
         </div>
 
         {/* Scroll Down Arrow - Animated */}
-        {/* Scroll Down Arrow - Animated */}
         <button
           onClick={scrollToContent}
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce cursor-pointer z-20 hover:text-white transition-colors"
+          className="absolute -bottom-8 lg:bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce cursor-pointer z-20 hover:text-white transition-colors"
           aria-label="Scroll down"
         >
           <ChevronDown className="w-10 h-10 text-[#1b3caf] drop-shadow-lg" />
@@ -692,10 +691,7 @@ export function ProductClient({
       {/* Main Content - Slides over Hero */}
       <main
         id="main-content"
-        className="relative z-10 w-full bg-gradient-to-b from-[#0f1419] via-[#1a1f2e] to-[#0f1419] transition-transform duration-700 ease-out"
-        style={{
-          transform: `translateY(${Math.max(0, 100 - scrollY / 8)}px)`,
-        }}
+        className="relative z-10 w-full bg-gradient-to-b from-[#0f1419] via-[#1a1f2e] to-[#0f1419]"
       >
         {/* Subtle decorative line */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-px bg-gradient-to-r from-transparent via-[#1b3caf]/30 to-transparent" />
