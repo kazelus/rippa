@@ -248,8 +248,9 @@ export function ProductClient({
   const scrollToContent = () => {
     const content = document.getElementById("main-content");
     if (content) {
-      const yOffset = -100; // Navbar height + breathing room
-      const y = content.getBoundingClientRect().top + window.scrollY + yOffset;
+      // Zmieniony offset na 0 - pozwala przewinąć ekran tak, aby całkowicie ukryć sekcję Hero (top=0). 
+      // Navbar (powyżej 80px) zasłoni co najwyżej samo tło main-content (ponieważ main-content ma pt-24).
+      const y = content.getBoundingClientRect().top + window.scrollY;
       window.scrollTo({ top: y, behavior: "smooth" });
     }
   };
