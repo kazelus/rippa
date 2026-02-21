@@ -507,8 +507,14 @@ export default function EditModelPage({
         });
 
         if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Błąd podczas upload'u");
+          let errorMsg = "Błąd podczas upload'u";
+          try {
+            const data = await response.json();
+            errorMsg = data.error || errorMsg;
+          } catch {
+            if (response.status === 413) errorMsg = "Plik jest za duży (limit hostingowy to 4.5MB).";
+          }
+          throw new Error(errorMsg);
         }
 
         const data = await response.json();
@@ -568,7 +574,10 @@ export default function EditModelPage({
         method: "POST",
         body: formDataImage,
       });
-      if (!response.ok) throw new Error("Błąd podczas upload'u");
+      if (!response.ok) {
+        if (response.status === 413) throw new Error("Plik jest za duży (limit serwera to 4.5MB).");
+        throw new Error("Błąd podczas upload'u");
+      }
       const data = await response.json();
       setSections((secs) =>
         secs.map((s, i) =>
@@ -618,8 +627,14 @@ export default function EditModelPage({
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Błąd podczas upload'u");
+        let errorMsg = "Błąd podczas upload'u";
+        try {
+          const data = await response.json();
+          errorMsg = data.error || errorMsg;
+        } catch {
+          if (response.status === 413) errorMsg = "Plik jest za duży (limit hostingowy to 4.5MB).";
+        }
+        throw new Error(errorMsg);
       }
 
       const data = await response.json();
