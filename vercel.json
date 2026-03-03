@@ -1,0 +1,8 @@
+{
+  "buildCommand": "npx prisma generate && NEXT_TURBOPACK=0 TURBOPACK=0 next build",
+  "framework": "nextjs",
+  "env": {
+    "NEXT_TURBOPACK": "0",
+    "TURBOPACK": "0"
+  }
+}
