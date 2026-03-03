@@ -49,7 +49,14 @@ export const Models: React.FC = () => {
     fetchModels();
   }, []);
 
-  const displayedModels = models.slice(0, 3);
+  const ACCESSORY_KEYWORDS = ["akcesor", "accessori", "accessory"];
+  const isAccessory = (model: Model) => {
+    const cat = (model as any).category;
+    if (!cat) return false;
+    const haystack = `${cat.name ?? ""} ${cat.slug ?? ""}`.toLowerCase();
+    return ACCESSORY_KEYWORDS.some((kw) => haystack.includes(kw));
+  };
+  const displayedModels = models.filter((m) => !isAccessory(m)).slice(0, 3);
 
   if (loading) {
       return (

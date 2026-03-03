@@ -56,17 +56,27 @@ export default function RootLayout({
         <script type="application/ld+json" suppressHydrationWarning>{`
           {
             "@context": "https://schema.org",
-            "@type": "Organization",
+            "@type": "LocalBusiness",
             "name": "Rippa Polska",
+            "description": "Autoryzowany dealer mini koparek i maszyn budowlanych Rippa w Polsce. Sprzedaż, serwis, części.",
             "url": "https://rippapolska.pl",
             "logo": "https://rippapolska.pl/logo.png",
+            "image": "https://rippapolska.pl/logo.png",
+            "priceRange": "PLN",
+            "areaServed": {
+              "@type": "Country",
+              "name": "Polska"
+            },
             "contactPoint": [{
               "@type": "ContactPoint",
               "telephone": "+48-123-456-789",
               "contactType": "customer service",
               "areaServed": "PL",
-              "availableLanguage": ["Polish", "English"]
-            }]
+              "availableLanguage": ["Polish"]
+            }],
+            "sameAs": [
+              "https://rippapolska.pl"
+            ]
           }
         `}</script>
       </head>

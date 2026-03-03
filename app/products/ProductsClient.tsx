@@ -49,6 +49,14 @@ interface ProductsClientProps {
   initialCategories?: Category[];
 }
 
+const ACCESSORY_KEYWORDS = ["akcesor", "accessori", "accessory"];
+
+const isAccessoryCategory = (cat?: Category | null) => {
+  if (!cat) return false;
+  const hay = `${cat.name ?? ""} ${cat.slug ?? ""}`.toLowerCase();
+  return ACCESSORY_KEYWORDS.some((kw) => hay.includes(kw));
+};
+
 export function ProductsClient({ initialModels = [], initialCategories = [] }: ProductsClientProps) {
   const searchParams = useSearchParams();
   const [models, setModels] = useState<ModelWithDetails[]>(initialModels);
@@ -60,6 +68,11 @@ export function ProductsClient({ initialModels = [], initialCategories = [] }: P
   const [searchTerm, setSearchTerm] = useState("");
   const [showBestsellers, setShowBestsellers] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
+
+  // Kategoria aktualnie wybranego filtra
+  const selectedCategoryObj = categories.find((c) => c.id === selectedCategory) ?? null;
+  // Czy użytkownik świadomie wybrał kategorię akcesoriów
+  const showingAccessories = isAccessoryCategory(selectedCategoryObj);
 
   useEffect(() => {
     if (initialModels.length === 0) {
@@ -96,14 +109,17 @@ export function ProductsClient({ initialModels = [], initialCategories = [] }: P
       !selectedCategory || model.categoryId === selectedCategory;
     const matchesSearch =
       model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (model.description && model.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesBestseller = !showBestsellers || model.featured;
+    // Ukryj akcesoria domyślnie; pokaż je tylko gdy wybrana kategoria to akcesoria
+    const matchesAccessoryFilter = showingAccessories
+      ? isAccessoryCategory(model.category)
+      : !isAccessoryCategory(model.category);
 
-    return matchesCategory && matchesSearch && matchesBestseller;
+    return matchesCategory && matchesSearch && matchesBestseller && matchesAccessoryFilter;
   });
 
-  const activeCategory = categories.find((c) => c.id === selectedCategory);
+  const activeCategory = selectedCategoryObj;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-20 relative z-10">
