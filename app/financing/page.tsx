@@ -3,6 +3,7 @@
 import { UnifiedNavbar } from "@/components/UnifiedNavbar";
 import { Footer } from "@/components/Footer";
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   CreditCard,
@@ -74,12 +75,12 @@ export default function FinancingPage() {
   /* Calculator state */
   const [calcAmount, setCalcAmount] = useState(150000);
   const [calcMonths, setCalcMonths] = useState(36);
-  const [calcType, setCalcType] = useState<"leasing" | "raty" | "kredyt">(
+  const [calcType, setCalcType] = useState<"leasing" | "raty">(
     "raty",
   );
 
   const monthlyRate = useCallback(() => {
-    const rates = { leasing: 0.035, raty: 0, kredyt: 0.049 };
+    const rates = { leasing: 0.035, raty: 0 };
     const r = rates[calcType] / 12;
     if (r === 0) return calcAmount / calcMonths;
     return (
@@ -161,7 +162,7 @@ export default function FinancingPage() {
               : "opacity-0 translate-y-12"
           }`}
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto w-full">
             {[
               {
                 icon: TrendingUp,
@@ -192,21 +193,6 @@ export default function FinancingPage() {
                 label: "Dla firm i osób prywatnych",
                 popular: true,
                 delay: "150ms",
-              },
-              {
-                icon: FileText,
-                title: "Kredyt na maszynę",
-                desc: "Finansowanie kredytem na zakup maszyny budowlanej. Współpracujemy z bankami, aby zapewnić najlepsze warunki.",
-                items: [
-                  "Kredyt do 100% wartości",
-                  "Okres: 12–72 miesiące",
-                  "Konkurencyjne oprocentowanie",
-                  "Stała lub malejąca rata",
-                  "Współpraca z wieloma bankami",
-                ],
-                label: "Dla firm i osób prywatnych",
-                popular: false,
-                delay: "300ms",
               },
             ].map((card, idx) => {
               const Icon = card.icon;
@@ -307,7 +293,6 @@ export default function FinancingPage() {
               {[
                 { key: "leasing" as const, label: "Leasing", icon: TrendingUp },
                 { key: "raty" as const, label: "Raty 0%", icon: CreditCard },
-                { key: "kredyt" as const, label: "Kredyt", icon: FileText },
               ].map((tab) => {
                 const TabIcon = tab.icon;
                 return (
@@ -776,42 +761,86 @@ export default function FinancingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* ─── Santander Partner Section ─── */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div
           ref={ctaReveal.ref}
-          className={`max-w-4xl mx-auto text-center transition-all duration-1000 ${
-            ctaReveal.isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+          className={`max-w-5xl mx-auto transition-all duration-1000 ${
+            ctaReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
           }`}
         >
-          <div className="bg-gradient-to-r from-[#1b3caf]/20 to-[#0f9fdf]/20 border border-[#1b3caf]/30 rounded-2xl p-12 relative overflow-hidden group hover:border-[#1b3caf]/50 transition-all duration-500">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-[#1b3caf]/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#0f9fdf]/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
-            <div className="relative z-10">
-              <h2 className="text-3xl font-bold text-white mb-4">
-                Chcesz poznać szczegóły finansowania?
-              </h2>
-              <p className="text-[#b0b0b0] text-lg mb-8 max-w-2xl mx-auto">
-                Skontaktuj się z nami, a przygotujemy indywidualną ofertę
-                finansowania dopasowaną do Twoich potrzeb
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  href="/contact"
-                  className="px-8 py-3 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white font-bold rounded-lg hover:shadow-lg hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300 inline-flex items-center justify-center gap-2"
-                >
-                  Zapytaj o finansowanie
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-                <a
-                  href="tel:+48787148016"
-                  className="px-8 py-3 bg-white/10 text-white font-bold rounded-lg border border-white/20 hover:bg-white/20 hover:scale-105 transition-all duration-300 inline-flex items-center justify-center gap-2"
-                >
-                  <Phone className="w-4 h-4" />
-                  +48 787 148 016
-                </a>
+          {/* Santander branding banner */}
+          <div className="bg-gradient-to-br from-white/[7%] to-white/[2%] border border-white/10 rounded-2xl overflow-hidden mb-8">
+            {/* Red accent top bar */}
+            <div className="h-1 w-full bg-gradient-to-r from-[#ec0000] to-[#cc0000]" />
+            <div className="p-8 md:p-10">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                {/* Logo */}
+                <div className="flex-shrink-0 bg-white rounded-2xl px-8 py-5 shadow-lg shadow-black/20">
+                  <Image
+                    src="/santander-logo.png"
+                    alt="Santander Leasing"
+                    width={200}
+                    height={80}
+                    className="h-16 w-auto object-contain"
+                  />
+                </div>
+                {/* Info */}
+                <div className="flex-1 text-center md:text-left">
+                  <p className="text-xs text-[#ec0000] font-bold uppercase tracking-widest mb-2">Partner finansowy</p>
+                  <h3 className="text-2xl font-bold text-white mb-3">
+                    Finansowanie we współpracy z Santander Leasing
+                  </h3>
+                  <p className="text-[#b0b0b0] leading-relaxed">
+                    Oferujemy leasing i raty 0% we współpracy z Santander Leasing — jedną
+                    z największych instytucji finansowych w Polsce. Szybka decyzja,
+                    przejrzyste warunki, pełne wsparcie na każdym etapie.
+                  </p>
+                </div>
               </div>
             </div>
+          </div>
+
+          {/* Marzena contact card */}
+          <div className="bg-gradient-to-br from-white/[7%] to-white/[2%] border border-white/10 hover:border-[#ec0000]/30 rounded-2xl p-8 md:p-10 transition-all duration-300 group">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              {/* Avatar */}
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#ec0000] to-[#cc0000] flex items-center justify-center flex-shrink-0 text-white font-bold text-xl shadow-lg shadow-[#ec0000]/20 group-hover:scale-110 transition-transform duration-300">
+                M
+              </div>
+              {/* Details */}
+              <div className="flex-1 text-center md:text-left">
+                <p className="text-xs text-[#ec0000] font-bold uppercase tracking-widest mb-1">Przedstawiciel Santander</p>
+                <h4 className="text-xl font-bold text-white mb-1">Pani Marzena</h4>
+                <p className="text-[#b0b0b0] text-sm">Specjalista ds. finansowania maszyn i urządzeń</p>
+              </div>
+              {/* Phone CTA */}
+              <a
+                href="tel:+48727011317"
+                className="flex items-center gap-3 px-7 py-4 bg-gradient-to-r from-[#ec0000] to-[#cc0000] text-white font-bold rounded-xl hover:shadow-lg hover:shadow-red-600/30 hover:scale-105 transition-all duration-300 flex-shrink-0"
+              >
+                <Phone className="w-5 h-5" />
+                <span>+48 727 011 317</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Bottom CTA buttons */}
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/contact"
+              className="px-8 py-3 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white font-bold rounded-lg hover:shadow-lg hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300 inline-flex items-center justify-center gap-2"
+            >
+              Zapytaj o finansowanie
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <a
+              href="tel:+48787148016"
+              className="px-8 py-3 bg-white/10 text-white font-bold rounded-lg border border-white/20 hover:bg-white/20 hover:scale-105 transition-all duration-300 inline-flex items-center justify-center gap-2"
+            >
+              <Phone className="w-4 h-4" />
+              +48 787 148 016
+            </a>
           </div>
         </div>
       </section>
