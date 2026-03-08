@@ -49,6 +49,7 @@ export async function POST(request: Request): Promise<NextResponse> {
             userId: session.user.id,
           }),
           pathname: customPathname,
+          allowOverwrite: true,
           // Limit to 50MB per file for Blob
           maximumSizeInBytes: 50 * 1024 * 1024,
         };
