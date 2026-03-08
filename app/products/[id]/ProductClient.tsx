@@ -628,7 +628,7 @@ export function ProductClient({
             )}
 
             {/* Description - truncated if too long on mobile */}
-            <p className="text-sm md:text-lg lg:text-xl text-[#d0d8e6] leading-snug lg:leading-relaxed font-light line-clamp-2 md:line-clamp-4 max-w-lg shrink-1">
+            <p className="text-sm md:text-lg lg:text-xl text-[#d0d8e6] leading-snug lg:leading-relaxed font-light line-clamp-3 md:line-clamp-6 w-full shrink-1">
               {model.heroDescription || model.description}
             </p>
 
