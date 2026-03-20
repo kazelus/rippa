@@ -592,6 +592,8 @@ export function ProductClient({
                         {group.options.map((opt) => {
                           const isSelected = selectedOptId === opt.id;
                           const isBase = (Number(opt.priceModifier) || 0) === 0;
+                          const thumbnailImg = opt.images?.find((img: any) => img.isThumbnail) || null;
+                          const hasThumbnail = !!thumbnailImg;
                           return (
                             <button
                               key={opt.id}
@@ -599,24 +601,31 @@ export function ProductClient({
                                 selectVariant(group.id, opt.id);
                                 setSelectedImageIndex(0);
                               }}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                              className={`inline-flex items-center gap-2 rounded-xl text-xs font-medium transition-all duration-200 ${
+                                hasThumbnail ? "px-2 py-1.5" : "px-3 py-1.5 rounded-full"
+                              } ${
                                 isSelected
                                   ? "bg-[#1b3caf]/20 text-white border border-[#1b3caf]/60"
                                   : "bg-white/5 text-[#9ca3b8] border border-white/10 hover:border-white/20 hover:text-white"
                               }`}
                             >
-                              <span>{opt.name}</span>
-                              {!isBase && (
-                                <span
-                                  className={`${
-                                    isSelected
-                                      ? "text-[#0f9fdf]"
-                                      : "text-[#6b7280]"
-                                  }`}
-                                >
-                                  +{formatPrice(Number(opt.priceModifier))}
-                                </span>
+                              {hasThumbnail && (
+                                <div className={`w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 border ${isSelected ? "border-[#1b3caf]/40" : "border-white/10"}`}>
+                                  <img
+                                    src={thumbnailImg!.url}
+                                    alt={thumbnailImg!.alt || opt.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
                               )}
+                              <div className="flex flex-col items-start leading-tight">
+                                <span>{opt.name}</span>
+                                {!isBase && (
+                                  <span className={`text-[10px] ${isSelected ? "text-[#0f9fdf]" : "text-[#6b7280]"}`}>
+                                    +{formatPrice(Number(opt.priceModifier))} PLN
+                                  </span>
+                                )}
+                              </div>
                             </button>
                           );
                         })}

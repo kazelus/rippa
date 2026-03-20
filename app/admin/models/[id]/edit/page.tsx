@@ -92,7 +92,7 @@ export default function EditModelPage({
     name: string;
     priceModifier: number;
     isDefault: boolean;
-    images: Array<{ url: string; alt: string; isHero?: boolean }>;
+    images: Array<{ url: string; alt: string; isHero?: boolean; isThumbnail?: boolean }>;
     parameterOverrides: Record<string, any>;
   };
   type VariantGroup = {
@@ -100,9 +100,8 @@ export default function EditModelPage({
     options: VariantOption[];
   };
   const [variantGroups, setVariantGroups] = useState<VariantGroup[]>([]);
-  const [variantImageUploading, setVariantImageUploading] = useState<
-    string | null
-  >(null);
+  const [variantImageUploading, setVariantImageUploading] = useState<Record<string, boolean>>({});
+  const [variantImageDrag, setVariantImageDrag] = useState<Record<string, boolean>>({});
 
   // Persist draft to sessionStorage to avoid losing state on remount
   const storageKey = `admin-model-edit-${modelId}`;
@@ -2170,201 +2169,211 @@ export default function EditModelPage({
                                 )}
                               </div>
 
-                              {/* Option images */}
-                              <div>
-                                <label className="block text-xs font-medium text-[#8b92a9] mb-2">
-                                  Zdjęcia tej opcji (podmienią galerię i hero
-                                  gdy wybrana)
-                                </label>
-                                <div className="flex flex-wrap gap-2">
-                                  {opt.images.map((img, ii) => (
-                                    <div
-                                      key={ii}
-                                      className="relative w-20 h-20 group/img"
-                                    >
-                                      <img
-                                        src={img.url}
-                                        alt={img.alt}
-                                        className={`w-full h-full object-cover rounded-lg border-2 ${img.isHero ? "border-[#1b3caf]" : "border-white/10"}`}
-                                      />
-                                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition rounded-lg flex items-center justify-center gap-1">
-                                        <button
-                                          type="button"
-                                          title="Ustaw jako Hero"
-                                          onClick={() => {
-                                            setVariantGroups((prev) =>
-                                              prev.map((g, i) =>
-                                                i === gi
-                                                  ? {
-                                                      ...g,
-                                                      options: g.options.map(
-                                                        (o, j) =>
-                                                          j === oi
-                                                            ? {
-                                                                ...o,
-                                                                images:
-                                                                  o.images.map(
-                                                                    (
-                                                                      im,
-                                                                      k,
-                                                                    ) => ({
-                                                                      ...im,
-                                                                      isHero:
-                                                                        k ===
-                                                                        ii,
-                                                                    }),
-                                                                  ),
-                                                              }
-                                                            : o,
-                                                      ),
-                                                    }
-                                                  : g,
-                                              ),
-                                            );
-                                          }}
-                                          className={`p-1 rounded ${img.isHero ? "text-[#1b3caf]" : "text-white hover:text-[#1b3caf]"}`}
-                                        >
-                                          <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                              {/* Option images — drag & drop */}
+                              {(() => {
+                                const dragKey = `${gi}-${oi}`;
+                                const isUploading = !!variantImageUploading[dragKey];
+                                const isDragging = !!variantImageDrag[dragKey];
+
+                                const uploadFiles = async (files: File[]) => {
+                                  for (const file of files) {
+                                    if (!file.type.startsWith("image/")) continue;
+                                    setVariantImageUploading((prev) => ({ ...prev, [dragKey]: true }));
+                                    try {
+                                      const fd = new FormData();
+                                      fd.append("file", file);
+                                      const res = await fetch("/api/upload", { method: "POST", body: fd });
+                                      if (!res.ok) throw new Error("Upload error");
+                                      const data = await res.json();
+                                      setVariantGroups((prev) =>
+                                        prev.map((g, i) =>
+                                          i === gi
+                                            ? {
+                                                ...g,
+                                                options: g.options.map((o, j) =>
+                                                  j === oi
+                                                    ? {
+                                                        ...o,
+                                                        images: [
+                                                          ...o.images,
+                                                          {
+                                                            url: data.url,
+                                                            alt: file.name.split(".")[0],
+                                                            isHero: o.images.length === 0,
+                                                            isThumbnail: o.images.length === 0,
+                                                          },
+                                                        ],
+                                                      }
+                                                    : o
+                                                ),
+                                              }
+                                            : g
+                                        )
+                                      );
+                                    } catch (err) {
+                                      console.error("Variant image upload error:", err);
+                                    } finally {
+                                      setVariantImageUploading((prev) => { const n = { ...prev }; delete n[dragKey]; return n; });
+                                    }
+                                  }
+                                };
+
+                                return (
+                                  <div>
+                                    <label className="block text-xs font-medium text-[#8b92a9] mb-2">
+                                      Zdjęcia tej opcji
+                                      <span className="text-[#6b7280] ml-1">(podmienią galerię gdy wybrana)</span>
+                                    </label>
+
+                                    {/* Thumbnails grid */}
+                                    {opt.images.length > 0 && (
+                                      <div className="flex flex-wrap gap-2 mb-3">
+                                        {opt.images.map((img, ii) => (
+                                          <div key={ii} className="relative w-24 h-24 group/img flex-shrink-0">
+                                            <img
+                                              src={img.url}
+                                              alt={img.alt}
+                                              className={`w-full h-full object-cover rounded-lg border-2 transition ${
+                                                img.isHero ? "border-[#1b3caf]" : img.isThumbnail ? "border-emerald-500" : "border-white/10"
+                                              }`}
                                             />
-                                          </svg>
-                                        </button>
-                                        <button
-                                          type="button"
-                                          title="Usuń"
-                                          onClick={() => {
-                                            setVariantGroups((prev) =>
-                                              prev.map((g, i) =>
-                                                i === gi
-                                                  ? {
-                                                      ...g,
-                                                      options: g.options.map(
-                                                        (o, j) =>
-                                                          j === oi
-                                                            ? {
-                                                                ...o,
-                                                                images:
-                                                                  o.images.filter(
-                                                                    (_, k) =>
-                                                                      k !== ii,
-                                                                  ),
-                                                              }
-                                                            : o,
-                                                      ),
-                                                    }
-                                                  : g,
-                                              ),
-                                            );
-                                          }}
-                                          className="text-red-400 hover:text-red-300 p-1 rounded"
-                                        >
-                                          <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M6 18L18 6M6 6l12 12"
-                                            />
-                                          </svg>
-                                        </button>
+                                            {/* Badges */}
+                                            {img.isHero && (
+                                              <span className="absolute top-1 left-1 bg-[#1b3caf] text-white text-[9px] font-bold px-1.5 py-0.5 rounded leading-none">HERO</span>
+                                            )}
+                                            {img.isThumbnail && (
+                                              <span className="absolute top-1 right-1 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded leading-none">THB</span>
+                                            )}
+                                            {/* Hover controls */}
+                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition rounded-lg flex flex-col items-center justify-center gap-1 p-1">
+                                              {/* Set Hero */}
+                                              <button
+                                                type="button"
+                                                title={img.isHero ? "To jest Hero" : "Ustaw jako Hero"}
+                                                onClick={() => {
+                                                  setVariantGroups((prev) =>
+                                                    prev.map((g, i) =>
+                                                      i === gi
+                                                        ? { ...g, options: g.options.map((o, j) =>
+                                                            j === oi ? { ...o, images: o.images.map((im, k) => ({ ...im, isHero: k === ii })) } : o
+                                                          ) }
+                                                        : g
+                                                    )
+                                                  );
+                                                }}
+                                                className={`w-full flex items-center justify-center gap-1 text-[10px] font-semibold px-1.5 py-1 rounded ${
+                                                  img.isHero ? "bg-[#1b3caf] text-white" : "bg-white/10 text-white hover:bg-[#1b3caf]/60"
+                                                }`}
+                                              >
+                                                <svg className="w-3 h-3" fill={img.isHero ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                                </svg>
+                                                Hero
+                                              </button>
+                                              {/* Set Thumbnail */}
+                                              <button
+                                                type="button"
+                                                title={img.isThumbnail ? "To jest miniatura" : "Ustaw jako miniaturę"}
+                                                onClick={() => {
+                                                  setVariantGroups((prev) =>
+                                                    prev.map((g, i) =>
+                                                      i === gi
+                                                        ? { ...g, options: g.options.map((o, j) =>
+                                                            j === oi ? { ...o, images: o.images.map((im, k) => ({ ...im, isThumbnail: k === ii })) } : o
+                                                          ) }
+                                                        : g
+                                                    )
+                                                  );
+                                                }}
+                                                className={`w-full flex items-center justify-center gap-1 text-[10px] font-semibold px-1.5 py-1 rounded ${
+                                                  img.isThumbnail ? "bg-emerald-600 text-white" : "bg-white/10 text-white hover:bg-emerald-700/60"
+                                                }`}
+                                              >
+                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                Miniatura
+                                              </button>
+                                              {/* Delete */}
+                                              <button
+                                                type="button"
+                                                title="Usuń"
+                                                onClick={() => {
+                                                  setVariantGroups((prev) =>
+                                                    prev.map((g, i) =>
+                                                      i === gi
+                                                        ? { ...g, options: g.options.map((o, j) =>
+                                                            j === oi ? { ...o, images: o.images.filter((_, k) => k !== ii) } : o
+                                                          ) }
+                                                        : g
+                                                    )
+                                                  );
+                                                }}
+                                                className="w-full flex items-center justify-center gap-1 text-[10px] font-semibold px-1.5 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/40"
+                                              >
+                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                                Usuń
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ))}
                                       </div>
-                                    </div>
-                                  ))}
-                                  {/* Upload button */}
-                                  <label className="w-20 h-20 flex items-center justify-center bg-[#0f1419] border-2 border-dashed border-[#1b3caf]/30 rounded-lg cursor-pointer hover:border-[#1b3caf]/60 transition">
-                                    {variantImageUploading === `${gi}-${oi}` ? (
-                                      <div className="w-5 h-5 border-2 border-[#1b3caf] border-t-transparent rounded-full animate-spin" />
-                                    ) : (
-                                      <svg
-                                        className="w-6 h-6 text-[#6b7280]"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M12 4v16m8-8H4"
-                                        />
-                                      </svg>
                                     )}
-                                    <input
-                                      type="file"
-                                      accept="image/*"
-                                      className="hidden"
-                                      onChange={async (e) => {
-                                        const file = e.target.files?.[0];
-                                        if (!file) return;
-                                        setVariantImageUploading(`${gi}-${oi}`);
-                                        try {
-                                          const fd = new FormData();
-                                          fd.append("file", file);
-                                          const res = await fetch(
-                                            "/api/upload",
-                                            { method: "POST", body: fd },
-                                          );
-                                          if (!res.ok)
-                                            throw new Error("Upload error");
-                                          const data = await res.json();
-                                          setVariantGroups((prev) =>
-                                            prev.map((g, i) =>
-                                              i === gi
-                                                ? {
-                                                    ...g,
-                                                    options: g.options.map(
-                                                      (o, j) =>
-                                                        j === oi
-                                                          ? {
-                                                              ...o,
-                                                              images: [
-                                                                ...o.images,
-                                                                {
-                                                                  url: data.url,
-                                                                  alt: file.name.split(
-                                                                    ".",
-                                                                  )[0],
-                                                                  isHero:
-                                                                    o.images
-                                                                      .length ===
-                                                                    0,
-                                                                },
-                                                              ],
-                                                            }
-                                                          : o,
-                                                    ),
-                                                  }
-                                                : g,
-                                            ),
-                                          );
-                                        } catch (err) {
-                                          console.error(
-                                            "Variant image upload error:",
-                                            err,
-                                          );
-                                        } finally {
-                                          setVariantImageUploading(null);
-                                          e.target.value = "";
-                                        }
+
+                                    {/* Drag & drop upload zone */}
+                                    <label
+                                      className={`relative flex flex-col items-center justify-center w-full py-6 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                                        isDragging
+                                          ? "border-[#1b3caf] bg-[#1b3caf]/10"
+                                          : "border-[#1b3caf]/30 bg-[#0f1419]/40 hover:border-[#1b3caf]/60 hover:bg-[#0f1419]/70"
+                                      }`}
+                                      onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setVariantImageDrag((p) => ({ ...p, [dragKey]: true })); }}
+                                      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setVariantImageDrag((p) => ({ ...p, [dragKey]: true })); }}
+                                      onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setVariantImageDrag((p) => ({ ...p, [dragKey]: false })); }}
+                                      onDrop={async (e) => {
+                                        e.preventDefault(); e.stopPropagation();
+                                        setVariantImageDrag((p) => ({ ...p, [dragKey]: false }));
+                                        const files = Array.from(e.dataTransfer.files);
+                                        if (files.length) await uploadFiles(files);
                                       }}
-                                    />
-                                  </label>
-                                </div>
-                              </div>
+                                    >
+                                      {isUploading ? (
+                                        <div className="flex flex-col items-center gap-2">
+                                          <div className="w-8 h-8 border-2 border-[#1b3caf] border-t-transparent rounded-full animate-spin" />
+                                          <span className="text-xs text-[#8b92a9]">Przesyłanie...</span>
+                                        </div>
+                                      ) : (
+                                        <div className="flex flex-col items-center gap-2 pointer-events-none">
+                                          <svg className="w-8 h-8 text-[#6b7280]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                          </svg>
+                                          <p className="text-xs text-[#8b92a9]">
+                                            <span className="text-[#1b3caf] font-semibold">Kliknij</span> lub przeciągnij zdjęcia
+                                          </p>
+                                          <p className="text-[10px] text-[#6b7280]">PNG, JPG, WEBP — maks. 20MB</p>
+                                        </div>
+                                      )}
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        className="hidden"
+                                        onChange={async (e) => {
+                                          const files = Array.from(e.target.files || []);
+                                          if (files.length) await uploadFiles(files);
+                                          e.target.value = "";
+                                        }}
+                                      />
+                                    </label>
+                                    <p className="text-[10px] text-[#6b7280] mt-2">
+                                      <span className="text-[#1b3caf] font-medium">HERO</span> = główne zdjęcie po wybraniu opcji &nbsp;·&nbsp;
+                                      <span className="text-emerald-500 font-medium">MINIATURA</span> = mały obrazek przy przycisku wyboru
+                                    </p>
+                                  </div>
+                                );
+                              })()}
 
                               {/* Parameter overrides */}
                               <div>

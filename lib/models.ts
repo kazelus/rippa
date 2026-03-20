@@ -61,7 +61,7 @@ export interface ModelWithDetails extends Model {
       name: string;
       priceModifier: number;
       isDefault: boolean;
-      images?: Array<{ url: string; alt: string; isHero?: boolean }> | null;
+      images?: Array<{ url: string; alt: string; isHero?: boolean; isThumbnail?: boolean }> | null;
       parameterOverrides?: Record<string, string | number | boolean> | null;
     }>;
   }>;
