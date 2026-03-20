@@ -63,6 +63,7 @@ export interface ModelWithDetails extends Model {
       isDefault: boolean;
       images?: Array<{ url: string; alt: string; isHero?: boolean; isThumbnail?: boolean }> | null;
       parameterOverrides?: Record<string, string | number | boolean> | null;
+      mergeWithBase?: boolean | null;
     }>;
   }>;
   accessories?: Array<{
@@ -287,7 +288,7 @@ export async function getModelById(id: string): Promise<ModelWithDetails | null>
   let allVariantOptions: any[] = [];
   if (groupIds.length > 0) {
     const optionsResult = await pool.query(
-      'SELECT id, name, "priceModifier", "isDefault", images, "parameterOverrides", "groupId" FROM "ModelVariantOption" WHERE "groupId" = ANY($1) ORDER BY "order" ASC, "createdAt" ASC',
+      'SELECT id, name, "priceModifier", "isDefault", images, "parameterOverrides", "mergeWithBase", "groupId" FROM "ModelVariantOption" WHERE "groupId" = ANY($1) ORDER BY "order" ASC, "createdAt" ASC',
       [groupIds]
     );
     allVariantOptions = optionsResult.rows;
@@ -305,7 +306,8 @@ export async function getModelById(id: string): Promise<ModelWithDetails | null>
         priceModifier: Number(o.priceModifier) || 0,
         isDefault: o.isDefault || false,
         images: typeof o.images === 'string' ? JSON.parse(o.images) : o.images, 
-        parameterOverrides: typeof o.parameterOverrides === 'string' ? JSON.parse(o.parameterOverrides) : o.parameterOverrides
+        parameterOverrides: typeof o.parameterOverrides === 'string' ? JSON.parse(o.parameterOverrides) : o.parameterOverrides,
+        mergeWithBase: o.mergeWithBase || false,
       }))
   }));
 

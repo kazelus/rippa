@@ -94,6 +94,7 @@ export default function EditModelPage({
     isDefault: boolean;
     images: Array<{ url: string; alt: string; isHero?: boolean; isThumbnail?: boolean }>;
     parameterOverrides: Record<string, any>;
+    mergeWithBase: boolean;
   };
   type VariantGroup = {
     name: string;
@@ -405,6 +406,7 @@ export default function EditModelPage({
                     isDefault: o.isDefault || false,
                     images: o.images || [],
                     parameterOverrides: o.parameterOverrides || {},
+                    mergeWithBase: o.mergeWithBase || false,
                 })),
                 })),
             );
@@ -1916,6 +1918,7 @@ export default function EditModelPage({
                                   isDefault: true,
                                   images: [],
                                   parameterOverrides: {},
+                                mergeWithBase: false,
                                 },
                               ],
                             },
@@ -2021,6 +2024,7 @@ export default function EditModelPage({
                                               isDefault: false,
                                               images: [],
                                               parameterOverrides: {},
+                                            mergeWithBase: false,
                                             },
                                           ],
                                         }
@@ -2374,6 +2378,33 @@ export default function EditModelPage({
                                   </div>
                                 );
                               })()}
+
+                              {/* Merge with base gallery toggle */}
+                              <label className="flex items-center gap-3 p-3 bg-[#0f1419]/60 border border-[#1b3caf]/20 rounded-xl cursor-pointer hover:border-[#1b3caf]/40 transition group">
+                                <div className="relative flex-shrink-0">
+                                  <input
+                                    type="checkbox"
+                                    checked={!!opt.mergeWithBase}
+                                    onChange={(e) => {
+                                      const val = e.target.checked;
+                                      setVariantGroups((prev) =>
+                                        prev.map((g, i) =>
+                                          i === gi
+                                            ? { ...g, options: g.options.map((o, j) =>
+                                                j === oi ? { ...o, mergeWithBase: val } : o
+                                              ) }
+                                            : g
+                                        )
+                                      );
+                                    }}
+                                    className="w-4 h-4 accent-[#1b3caf] cursor-pointer"
+                                  />
+                                </div>
+                                <div>
+                                  <p className="text-sm text-white font-medium">Pokaż też zdjęcia główne produktu</p>
+                                  <p className="text-xs text-[#6b7280]">Zdjęcia wariantu będą widoczne razem z galerią podstawową (nie zastąpią jej)</p>
+                                </div>
+                              </label>
 
                               {/* Parameter overrides */}
                               <div>

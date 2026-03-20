@@ -194,6 +194,15 @@ export async function initializeDatabase() {
       )
     `);
 
+    // Add mergeWithBase column to ModelVariantOption if it doesn't exist
+    try {
+      await db.query(
+        `ALTER TABLE "ModelVariantOption" ADD COLUMN IF NOT EXISTS "mergeWithBase" BOOLEAN DEFAULT false`
+      );
+    } catch (e) {
+      // Column may already exist
+    }
+
     // ===== MODEL ACCESSORIES (model-to-model links) =====
     await db.query(`
       CREATE TABLE IF NOT EXISTS "ModelAccessory" (

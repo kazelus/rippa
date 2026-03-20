@@ -116,7 +116,7 @@ export function ProductClient({
     setSelectedVariants((prev) => ({ ...prev, [groupId]: optionId }));
   };
 
-  // Get current effective images (swapped by variant selection)
+  // Get current effective images (swapped or merged by variant selection)
   const getEffectiveImages = () => {
     if (!model) return [];
     // Check if any selected variant has images - use the LAST one that has images
@@ -128,6 +128,7 @@ export function ProductClient({
       variants?: string[] | null;
       blurDataUrl?: string | null;
     }> | null = null;
+    let shouldMerge = false;
     if (model.variantGroups) {
       for (const group of model.variantGroups) {
         const selectedOptId = selectedVariants[group.id];
@@ -135,11 +136,20 @@ export function ProductClient({
           const opt = group.options.find((o: { id: string }) => o.id === selectedOptId);
           if (opt?.images && opt.images.length > 0) {
             variantImages = opt.images;
+            shouldMerge = !!(opt as any).mergeWithBase;
           }
         }
       }
     }
-    if (variantImages) return variantImages;
+    if (variantImages) {
+      if (shouldMerge) {
+        // Append base product images after variant images (avoid duplicates by url)
+        const variantUrls = new Set(variantImages.map((i) => i.url));
+        const baseOnly = (model.images || []).filter((i) => !variantUrls.has(i.url));
+        return [...variantImages, ...baseOnly];
+      }
+      return variantImages;
+    }
     return model.images || [];
   };
 
@@ -610,7 +620,7 @@ export function ProductClient({
                               }`}
                             >
                               {hasThumbnail && (
-                                <div className={`w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 border ${isSelected ? "border-[#1b3caf]/40" : "border-white/10"}`}>
+                                <div className={`w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 border ${isSelected ? "border-[#1b3caf]/60" : "border-white/10"}`}>
                                   <img
                                     src={thumbnailImg!.url}
                                     alt={thumbnailImg!.alt || opt.name}

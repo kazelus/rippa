@@ -30,6 +30,7 @@ export async function GET(
           priceModifier: parseFloat(o.priceModifier) || 0,
           images: o.images || null,
           parameterOverrides: o.parameterOverrides || null,
+          mergeWithBase: o.mergeWithBase || false,
         })),
       });
     }
@@ -96,7 +97,7 @@ export async function PUT(
         if (!opt.name?.trim()) continue;
 
         const optInsert = await pool.query(
-          'INSERT INTO "ModelVariantOption" (id, "groupId", name, "priceModifier", "isDefault", images, "parameterOverrides", "order", "createdAt", "updatedAt") VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()) RETURNING *',
+          'INSERT INTO "ModelVariantOption" (id, "groupId", name, "priceModifier", "isDefault", images, "parameterOverrides", "mergeWithBase", "order", "createdAt", "updatedAt") VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()) RETURNING *',
           [
             newGroup.id,
             opt.name.trim(),
@@ -106,6 +107,7 @@ export async function PUT(
             opt.parameterOverrides
               ? JSON.stringify(opt.parameterOverrides)
               : null,
+            !!opt.mergeWithBase,
             oi,
           ],
         );
