@@ -189,7 +189,7 @@ export const Models: React.FC = () => {
                             Cena od
                           </span>
                           <span className="text-[#1b3caf] font-bold text-lg">
-                            {model.price.toLocaleString("en-US")} PLN
+                            {model.price.toLocaleString("pl-PL")} PLN
                           </span>
                         </div>
                         <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[#1b3caf] group-hover:border-[#1b3caf] transition-all duration-300">
