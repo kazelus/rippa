@@ -7,6 +7,7 @@ import { Package, ArrowRight, ExternalLink } from "lucide-react";
 interface ModelWithAccessories {
   id: string;
   name: string;
+  slug?: string;
   accessories: Array<{
     id: string;
     name: string;
@@ -127,7 +128,7 @@ export default function AdminAccessoriesPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Link
-                    href={`/products/${model.id}`}
+                    href={`/products/${model.slug || model.id}`}
                     target="_blank"
                     className="p-2 rounded-lg text-[#8b92a9] hover:text-white hover:bg-white/10 transition-all"
                     title="Zobacz na stronie"

@@ -1,5 +1,5 @@
 import { getModelById } from "@/lib/models";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ProductClient } from "./ProductClient";
 import { UnifiedNavbar } from "@/components/UnifiedNavbar";
 import { Footer } from "@/components/Footer";
@@ -26,7 +26,7 @@ export async function generateMetadata({
     `Kup ${model.name} w Rippa Polska. Autoryzowany dealer mini koparek w Polsce. Cena od ${Number(model.price).toLocaleString("pl-PL")} PLN.`;
   const imageUrl =
     model.images && model.images.length > 0 ? model.images[0].url : undefined;
-  const productUrl = `${BASE_URL}/products/${id}`;
+  const productUrl = `${BASE_URL}/products/${model.slug || id}`;
 
   return {
     title,
@@ -66,7 +66,13 @@ export default async function ProductPage({
     notFound();
   }
 
-  const productUrl = `${BASE_URL}/products/${id}`;
+  // 301 Redirect from UUID to new SEO slug
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+  if (isUuid && model.slug) {
+    redirect(`/products/${model.slug}`);
+  }
+
+  const productUrl = `${BASE_URL}/products/${model.slug || id}`;
   const imageUrl =
     model.images && model.images.length > 0 ? model.images[0].url : null;
 

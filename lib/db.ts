@@ -71,6 +71,15 @@ export async function initializeDatabase() {
       // Column might already exist
     }
 
+    // Add slug column if it doesn't exist
+    try {
+      await db.query(`
+        ALTER TABLE "Model" ADD COLUMN IF NOT EXISTS slug VARCHAR(255) UNIQUE
+      `);
+    } catch (e) {
+      // Column might already exist
+    }
+
     // Add visible column if it doesn't exist
     try {
       await db.query(`

@@ -42,10 +42,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let productPages: MetadataRoute.Sitemap = [];
   try {
     const result = await pool.query(
-      `SELECT id, "updatedAt" FROM "Model" WHERE COALESCE(visible, true) = true ORDER BY "createdAt" DESC`
+      `SELECT id, slug, "updatedAt" FROM "Model" WHERE COALESCE(visible, true) = true ORDER BY "createdAt" DESC`
     );
-    productPages = result.rows.map((row: { id: string; updatedAt: Date }) => ({
-      url: `${BASE_URL}/products/${row.id}`,
+    productPages = result.rows.map((row: { id: string; slug?: string | null; updatedAt: Date }) => ({
+      url: `${BASE_URL}/products/${row.slug || row.id}`,
       lastModified: row.updatedAt ? new Date(row.updatedAt) : new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.8,

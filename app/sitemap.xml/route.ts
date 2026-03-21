@@ -17,7 +17,7 @@ export async function GET() {
 
   const urls = [
     ...staticPages.map((slug) => `https://rippapolska.pl/${slug}`),
-    ...models.map((m: any) => `https://rippapolska.pl/products/${m.id}`),
+    ...models.map((m: any) => `https://rippapolska.pl/products/${m.slug || m.id}`),
   ];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls

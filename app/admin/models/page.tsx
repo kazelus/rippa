@@ -23,6 +23,7 @@ import { showToast } from "@/lib/toast";
 interface Model {
   id: string;
   name: string;
+  slug?: string;
   description: string;
   power?: string;
   depth?: string;
@@ -316,7 +317,7 @@ export default function ModelsPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-1.5">
                         <Link
-                          href={`/products/${model.id}`}
+                          href={`/products/${model.slug || model.id}`}
                           target="_blank"
                           className="p-2 rounded-lg text-[#8b92a9] hover:text-[#0f9fdf] hover:bg-[#0f9fdf]/10 transition-all"
                           title="Zobacz na stronie"

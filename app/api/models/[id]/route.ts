@@ -58,7 +58,7 @@ export async function GET(
         [id],
       ),
       pool.query(
-        `SELECT DISTINCT m.id, m.name, m.description, m.price,
+        `SELECT DISTINCT m.id, m.name, m.slug, m.description, m.price,
                 (SELECT url FROM "Image" WHERE "modelId" = m.id ORDER BY "createdAt" DESC LIMIT 1) as "imageUrl"
          FROM "ModelAccessory" ma
          JOIN "Model" m ON (
@@ -160,6 +160,7 @@ export async function GET(
       accessories: accessoriesResult.rows.map((a: any) => ({
         id: a.id,
         name: a.name,
+        slug: a.slug || null,
         description: a.description,
         price: a.price ? parseFloat(a.price) : null,
         imageUrl: a.imageUrl,

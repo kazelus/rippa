@@ -61,7 +61,7 @@ export default async function ProductsPage() {
     itemListElement: machines.map((m, i) => ({
       "@type": "ListItem",
       position: i + 1,
-      url: `${BASE_URL}/products/${m.id}`,
+      url: `${BASE_URL}/products/${m.slug || m.id}`,
       name: m.name,
     })),
   };

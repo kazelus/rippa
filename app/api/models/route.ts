@@ -6,6 +6,30 @@ import { initializeDatabase, pool } from "@/lib/db";
 
 import { getModelsWithDetails } from "@/lib/models";
 
+function generateSlug(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove diacritics
+    .replace(/\s+/g, "-") // replace spaces with hyphens
+    .replace(/[^\w\-]+/g, "") // remove non-word chars
+    .replace(/\-\-+/g, "-") // replace multiple hyphens
+    .replace(/^-+/, "") // trim hyphen from start
+    .replace(/-+$/, ""); // trim hyphen from end
+}
+
+async function ensureUniqueSlug(baseSlug: string): Promise<string> {
+  let slug = baseSlug;
+  let counter = 1;
+  while (true) {
+    const res = await pool.query('SELECT id FROM "Model" WHERE slug = $1', [slug]);
+    if (res.rowCount === 0) return slug;
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
     await initializeDatabase();
@@ -76,13 +100,17 @@ export async function POST(req: NextRequest) {
       adminId: session.user.id,
     });
 
+    const baseSlug = generateSlug(name);
+    const uniqueSlug = await ensureUniqueSlug(baseSlug);
+
     // Insert model with category and heroImageId
     const modelResult = await pool.query(
-      `INSERT INTO "Model" (id, name, description, "heroDescription", power, depth, weight, bucket, price, featured, visible, "categoryId", "heroImageId", "adminId", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
-       RETURNING id, name, description, "heroDescription", power, depth, weight, bucket, price, featured, visible, "categoryId", "heroImageId", "adminId", "createdAt", "updatedAt"`,
+      `INSERT INTO "Model" (id, name, slug, description, "heroDescription", power, depth, weight, bucket, price, featured, visible, "categoryId", "heroImageId", "adminId", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
+       RETURNING id, name, slug, description, "heroDescription", power, depth, weight, bucket, price, featured, visible, "categoryId", "heroImageId", "adminId", "createdAt", "updatedAt"`,
       [
         name,
+        uniqueSlug,
         description || null,
         heroDescription || null,
         power,

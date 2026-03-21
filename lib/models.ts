@@ -8,6 +8,7 @@ export interface Category {
 }
 
 export interface ModelWithDetails extends Model {
+  slug?: string | null;
   heroDescription?: string | null;
   visible: boolean;
   categoryId?: string | null;
@@ -69,6 +70,7 @@ export interface ModelWithDetails extends Model {
   accessories?: Array<{
     id: string;
     name: string;
+    slug?: string | null;
     description: string | null;
     price: number | null;
     imageUrl: string | null;
@@ -81,15 +83,16 @@ export interface ModelWithDetails extends Model {
   }>;
 }
 
-export async function getModelsWithDetails(isAdmin: boolean = false): Promise<ModelWithDetails[]> {
+export async function getModelsWithDetails(showAll: boolean = false): Promise<ModelWithDetails[]> {
   // Fetch models with category info
+  const visibleFilter = showAll ? "" : "WHERE COALESCE(m.visible, true) = true";
   const modelsResult = await pool.query(`
-    SELECT m.id, m.name, m.description, m."heroDescription", m.power, m.depth, m.weight, m.bucket, m.price, 
+    SELECT m.id, m.name, m.slug, m.description, m."heroDescription", m.power, m.depth, m.weight, m.bucket, m.price, 
            m.featured, COALESCE(m.visible, true) as visible, m."categoryId", m."heroImageId", m."adminId", m."createdAt", m."updatedAt",
            c.id as "category_id", c.name as "category_name", c.slug as "category_slug"
     FROM "Model" m
     LEFT JOIN "Category" c ON m."categoryId" = c.id
-    ${!isAdmin ? "WHERE COALESCE(m.visible, true) = true" : ""}
+    ${visibleFilter}
     ORDER BY m."createdAt" DESC
   `);
 
@@ -157,6 +160,7 @@ export async function getModelsWithDetails(isAdmin: boolean = false): Promise<Mo
     return {
       id: model.id,
       name: model.name,
+      slug: model.slug || null,
       description: model.description,
       heroDescription: model.heroDescription,
       power: model.power,
@@ -232,20 +236,21 @@ export async function getModelsWithDetails(isAdmin: boolean = false): Promise<Mo
   });
 }
 
-export async function getModelById(id: string): Promise<ModelWithDetails | null> {
+export async function getModelById(idOrSlug: string): Promise<ModelWithDetails | null> {
   // Reuse the query logic but filter by ID efficiently
-  // Note: getModelsWithDetails fetches ALL models if no ID filter.
   // We should optimize this to fetch only ONE model. 
-  // For now, to ensure consistency and speed, let's copy the logic but filter by ID.
   
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idOrSlug);
+  const condition = isUuid ? 'm.id = $1' : 'm.slug = $1';
+
   const modelsResult = await pool.query(`
-    SELECT m.id, m.name, m.description, m."heroDescription", m.power, m.depth, m.weight, m.bucket, m.price, 
+    SELECT m.id, m.name, m.slug, m.description, m."heroDescription", m.power, m.depth, m.weight, m.bucket, m.price, 
            m.featured, COALESCE(m.visible, true) as visible, m."categoryId", m."heroImageId", m."adminId", m."createdAt", m."updatedAt",
            c.id as "category_id", c.name as "category_name", c.slug as "category_slug"
     FROM "Model" m
     LEFT JOIN "Category" c ON m."categoryId" = c.id
-    WHERE m.id = $1
-  `, [id]);
+    WHERE ${condition}
+  `, [idOrSlug]);
 
   if (modelsResult.rowCount === 0) return null;
   const model = modelsResult.rows[0];
@@ -332,6 +337,7 @@ export async function getModelById(id: string): Promise<ModelWithDetails | null>
   return {
       id: model.id,
       name: model.name,
+      slug: model.slug || null,
       description: model.description,
       heroDescription: model.heroDescription,
       power: model.power,

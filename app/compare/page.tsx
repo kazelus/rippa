@@ -263,7 +263,7 @@ export default function ComparePage() {
               </div>
               <div className="mt-3 flex items-center justify-between">
                 <Link
-                  href={`/products/${m.id}`}
+                  href={`/products/${m.slug || m.id}`}
                   className="text-sm text-[#1b3caf] hover:text-[#0f9fdf] transition"
                 >
                   Zobacz

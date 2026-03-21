@@ -42,6 +42,7 @@ export async function verifyPassword(
 export interface Model {
   id: string;
   name: string;
+  slug?: string | null;
   description: string | null;
   power?: string;
   depth?: string;

@@ -73,6 +73,7 @@ export function ProductClient({
     Array<{
       id: string;
       name: string;
+      slug?: string | null;
       description: string | null;
       price: number | null;
       imageUrl: string | null;
@@ -492,7 +493,7 @@ export function ProductClient({
           priceCurrency: 'PLN',
           price: String(model.price),
           availability: 'https://schema.org/InStock',
-          url: `https://rippapolska.pl/products/${model.id}`,
+          url: `https://rippapolska.pl/products/${model.slug || model.id}`,
         },
         category: model.category?.name || undefined,
         additionalProperty: (model.features || [])
@@ -1423,10 +1424,10 @@ export function ProductClient({
                 Sprawdź kompatybilne produkty
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {accessories.map((acc: { id: string; name: string; description: string | null; price: number | null; imageUrl: string | null }) => (
+                {accessories.map((acc: { id: string; name: string; slug?: string | null; description: string | null; price: number | null; imageUrl: string | null }) => (
                   <Link
                     key={acc.id}
-                    href={`/products/${acc.id}`}
+                    href={`/products/${acc.slug || acc.id}`}
                     className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-[#1b3caf]/40 transition-all duration-300 group block"
                   >
                     <div className="aspect-square bg-white/5 relative overflow-hidden">

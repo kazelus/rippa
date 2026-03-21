@@ -270,7 +270,7 @@ export function ProductsClient({ initialModels = [], initialCategories = [] }: P
           {filteredModels.map((model, idx) => (
             <Link
               key={model.id}
-              href={`/products/${model.id}`}
+              href={`/products/${model.slug || model.id}`}
               className="group relative flex flex-col bg-gradient-to-br from-white/[6%] to-white/[2%] border border-white/10 rounded-2xl overflow-hidden hover:border-[#1b3caf]/40 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#1b3caf]/8"
               style={{
                 animationDelay: `${idx * 80}ms`,
