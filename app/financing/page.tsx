@@ -72,27 +72,9 @@ export default function FinancingPage() {
   /* FAQ accordion */
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  /* Calculator state */
-  const [calcAmount, setCalcAmount] = useState(150000);
-  const [calcMonths, setCalcMonths] = useState(36);
-  const [calcType, setCalcType] = useState<"leasing" | "raty">(
-    "raty",
-  );
-
-  const monthlyRate = useCallback(() => {
-    const rates = { leasing: 0.035, raty: 0 };
-    const r = rates[calcType] / 12;
-    if (r === 0) return calcAmount / calcMonths;
-    return (
-      (calcAmount * r * Math.pow(1 + r, calcMonths)) /
-      (Math.pow(1 + r, calcMonths) - 1)
-    );
-  }, [calcAmount, calcMonths, calcType]);
-
   /* Scroll reveals */
   const heroReveal = useScrollReveal(0.1);
   const cardsReveal = useScrollReveal(0.05);
-  const calcReveal = useScrollReveal(0.1);
   const stepsReveal = useScrollReveal(0.1);
   const statsReveal = useScrollReveal(0.15);
   const benefitsReveal = useScrollReveal(0.1);
@@ -262,208 +244,74 @@ export default function FinancingPage() {
         </div>
       </section>
 
-      {/* ─── Interactive Calculator ─── */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white/5 border-y border-white/10">
+      {/* ─── Santander Partner Section (Przeniesiona) ─── */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#0a0f1d] to-[#121826] border-y border-white/10 relative overflow-hidden">
+        {/* Dekoracyjne tło nawiązujące do Santandera */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#ec0000]/5 rounded-full blur-[120px] pointer-events-none" />
+        
         <div
-          ref={calcReveal.ref}
-          className={`max-w-4xl mx-auto transition-all duration-1000 ${
-            calcReveal.isVisible
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-12"
+          ref={ctaReveal.ref}
+          className={`max-w-5xl mx-auto transition-all duration-1000 relative z-10 ${
+            ctaReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
           }`}
         >
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1b3caf]/10 border border-[#1b3caf]/30 mb-4">
-              <Calculator className="w-3.5 h-3.5 text-[#1b3caf]" />
-              <span className="text-xs text-[#b0b0b0] uppercase tracking-wider">
-                Kalkulator
-              </span>
+          {/* Santander branding banner */}
+          <div className="bg-gradient-to-br from-white/[7%] to-white/[2%] border border-white/10 rounded-2xl overflow-hidden mb-8 shadow-2xl">
+            {/* Red accent top bar */}
+            <div className="h-1 w-full bg-gradient-to-r from-[#ec0000] to-[#cc0000]" />
+            <div className="p-8 md:p-10">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                {/* Logo */}
+                <div className="flex-shrink-0 bg-white rounded-2xl px-8 py-5 shadow-lg shadow-black/20 transform hover:scale-105 transition-transform">
+                  <Image
+                    src="/santander-logo.png"
+                    alt="Santander Leasing"
+                    width={200}
+                    height={80}
+                    className="h-16 w-auto object-contain"
+                  />
+                </div>
+                {/* Info */}
+                <div className="flex-1 text-center md:text-left">
+                  <p className="text-xs text-[#ec0000] font-bold uppercase tracking-widest mb-2 flex items-center justify-center md:justify-start gap-2">
+                    <Shield className="w-4 h-4" /> Autoryzowany partner
+                  </p>
+                  <h3 className="text-3xl font-bold text-white mb-4">
+                    Pewne finansowanie z Santander Leasing
+                  </h3>
+                  <p className="text-[#b0b0b0] leading-relaxed text-lg">
+                    Oferujemy błyskawiczny leasing i korzystne raty we współpracy ze sprawdzoną 
+                    instytucją finansową. Gwarantujemy minimum formalności, przejrzyste dokumenty 
+                    oraz pełne wsparcie przez cały okres umowy.
+                  </p>
+                </div>
+              </div>
             </div>
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Oblicz swoją ratę
-            </h2>
-            <p className="text-[#b0b0b0] text-lg">
-              Sprawdź orientacyjną wysokość miesięcznej raty
-            </p>
           </div>
 
-          <div className="bg-gradient-to-br from-white/[7%] to-white/[2%] border border-white/10 rounded-2xl p-8 md:p-10">
-            {/* Financing type tabs */}
-            <div className="flex flex-wrap gap-2 mb-10 justify-center">
-              {[
-                { key: "leasing" as const, label: "Leasing", icon: TrendingUp },
-                { key: "raty" as const, label: "Raty 0%", icon: CreditCard },
-              ].map((tab) => {
-                const TabIcon = tab.icon;
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() => setCalcType(tab.key)}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                      calcType === tab.key
-                        ? "bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white shadow-lg shadow-[#1b3caf]/30 scale-105"
-                        : "bg-white/5 text-[#b0b0b0] border border-white/10 hover:border-[#1b3caf]/30 hover:text-white"
-                    }`}
-                  >
-                    <TabIcon className="w-4 h-4" />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              {/* Sliders */}
-              <div className="space-y-8">
-                {/* Amount */}
-                <div>
-                  <div className="flex justify-between mb-3">
-                    <label className="text-sm text-[#b0b0b0] font-medium">
-                      Kwota finansowania
-                    </label>
-                    <span className="text-sm font-bold text-white">
-                      {formatPLN(calcAmount)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() =>
-                        setCalcAmount((v) => Math.max(50000, v - 10000))
-                      }
-                      className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition flex-shrink-0"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <div className="relative flex-1">
-                      <input
-                        type="range"
-                        min={50000}
-                        max={500000}
-                        step={10000}
-                        value={calcAmount}
-                        onChange={(e) => setCalcAmount(Number(e.target.value))}
-                        className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-white/10 accent-[#1b3caf]"
-                        style={{
-                          background: `linear-gradient(to right, #1b3caf ${
-                            ((calcAmount - 50000) / 450000) * 100
-                          }%, rgba(255,255,255,0.1) ${
-                            ((calcAmount - 50000) / 450000) * 100
-                          }%)`,
-                        }}
-                      />
-                    </div>
-                    <button
-                      onClick={() =>
-                        setCalcAmount((v) => Math.min(500000, v + 10000))
-                      }
-                      className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition flex-shrink-0"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="flex justify-between mt-1 text-xs text-[#8b92a9]">
-                    <span>50 000 zł</span>
-                    <span>500 000 zł</span>
-                  </div>
+          {/* Marzena contact card */}
+          <div className="bg-gradient-to-br from-[#ec0000]/10 to-transparent border border-[#ec0000]/30 hover:border-[#ec0000]/50 rounded-2xl p-8 md:p-10 transition-all duration-500 group shadow-lg shadow-[#ec0000]/5">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="flex items-center gap-6">
+                {/* Avatar */}
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#ec0000] to-[#990000] flex items-center justify-center flex-shrink-0 text-white font-bold text-3xl shadow-xl shadow-[#ec0000]/30 group-hover:scale-110 transition-transform duration-500">
+                  M
                 </div>
-
-                {/* Months */}
-                <div>
-                  <div className="flex justify-between mb-3">
-                    <label className="text-sm text-[#b0b0b0] font-medium">
-                      Okres finansowania
-                    </label>
-                    <span className="text-sm font-bold text-white">
-                      {calcMonths} mies.
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setCalcMonths((v) => Math.max(6, v - 6))}
-                      className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition flex-shrink-0"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <div className="relative flex-1">
-                      <input
-                        type="range"
-                        min={6}
-                        max={72}
-                        step={6}
-                        value={calcMonths}
-                        onChange={(e) => setCalcMonths(Number(e.target.value))}
-                        className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-white/10 accent-[#1b3caf]"
-                        style={{
-                          background: `linear-gradient(to right, #1b3caf ${
-                            ((calcMonths - 6) / 66) * 100
-                          }%, rgba(255,255,255,0.1) ${
-                            ((calcMonths - 6) / 66) * 100
-                          }%)`,
-                        }}
-                      />
-                    </div>
-                    <button
-                      onClick={() => setCalcMonths((v) => Math.min(72, v + 6))}
-                      className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition flex-shrink-0"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="flex justify-between mt-1 text-xs text-[#8b92a9]">
-                    <span>6 mies.</span>
-                    <span>72 mies.</span>
-                  </div>
+                {/* Details */}
+                <div className="text-center md:text-left">
+                  <p className="text-xs text-[#ec0000] font-bold uppercase tracking-widest mb-1">Bezpośredni Opiekun Klienta Santander</p>
+                  <h4 className="text-2xl font-bold text-white mb-2">Pani Marzena</h4>
+                  <p className="text-[#b0b0b0] text-sm">Specjalista ds. finansowania maszyn i urządzeń</p>
                 </div>
               </div>
-
-              {/* Result */}
-              <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#1b3caf]/10 to-[#0f9fdf]/5 border border-[#1b3caf]/20 rounded-2xl p-8">
-                <span className="text-sm text-[#b0b0b0] mb-2 uppercase tracking-wider">
-                  Orientacyjna rata miesięczna
-                </span>
-                <div className="text-5xl font-bold text-white mb-1 tabular-nums">
-                  {formatPLN(Math.round(monthlyRate()))}
-                </div>
-                <span className="text-xs text-[#8b92a9] mb-6">/ miesiąc</span>
-
-                <div className="grid grid-cols-2 gap-4 w-full text-center text-sm">
-                  <div className="p-3 bg-white/5 rounded-xl">
-                    <div className="text-[#b0b0b0]">Łącznie</div>
-                    <div className="font-bold text-white">
-                      {formatPLN(Math.round(monthlyRate() * calcMonths))}
-                    </div>
-                  </div>
-                  <div className="p-3 bg-white/5 rounded-xl">
-                    <div className="text-[#b0b0b0]">
-                      {calcType === "raty" ? "Nadpłata" : "Koszt odsetek"}
-                    </div>
-                    <div className="font-bold text-white">
-                      {formatPLN(
-                        Math.max(
-                          0,
-                          Math.round(monthlyRate() * calcMonths - calcAmount),
-                        ),
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-[10px] text-[#8b92a9] mt-4 text-center">
-                  * Kalkulacja ma charakter poglądowy i nie stanowi oferty
-                  handlowej
-                </p>
-              </div>
-            </div>
-
-            {/* CTA inside calculator */}
-            <div className="mt-8 text-center">
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300 text-sm"
+              {/* Phone CTA */}
+              <a
+                href="tel:+48727011317"
+                className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#ec0000] to-[#cc0000] text-white font-bold text-lg rounded-xl hover:shadow-2xl hover:shadow-[#ec0000]/40 hover:-translate-y-1 transition-all duration-300 flex-shrink-0 border border-red-500/50"
               >
-                Zapytaj o dokładną ofertę
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+                <Phone className="w-6 h-6 animate-pulse" />
+                <span>+48 727 011 317</span>
+              </a>
             </div>
           </div>
         </div>
@@ -761,84 +609,22 @@ export default function FinancingPage() {
         </div>
       </section>
 
-      {/* ─── Santander Partner Section ─── */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div
-          ref={ctaReveal.ref}
-          className={`max-w-5xl mx-auto transition-all duration-1000 ${
-            ctaReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-          }`}
-        >
-          {/* Santander branding banner */}
-          <div className="bg-gradient-to-br from-white/[7%] to-white/[2%] border border-white/10 rounded-2xl overflow-hidden mb-8">
-            {/* Red accent top bar */}
-            <div className="h-1 w-full bg-gradient-to-r from-[#ec0000] to-[#cc0000]" />
-            <div className="p-8 md:p-10">
-              <div className="flex flex-col md:flex-row items-center gap-8">
-                {/* Logo */}
-                <div className="flex-shrink-0 bg-white rounded-2xl px-8 py-5 shadow-lg shadow-black/20">
-                  <Image
-                    src="/santander-logo.png"
-                    alt="Santander Leasing"
-                    width={200}
-                    height={80}
-                    className="h-16 w-auto object-contain"
-                  />
-                </div>
-                {/* Info */}
-                <div className="flex-1 text-center md:text-left">
-                  <p className="text-xs text-[#ec0000] font-bold uppercase tracking-widest mb-2">Partner finansowy</p>
-                  <h3 className="text-2xl font-bold text-white mb-3">
-                    Finansowanie we współpracy z Santander Leasing
-                  </h3>
-                  <p className="text-[#b0b0b0] leading-relaxed">
-                    Oferujemy leasing i raty 0% we współpracy z Santander Leasing — jedną
-                    z największych instytucji finansowych w Polsce. Szybka decyzja,
-                    przejrzyste warunki, pełne wsparcie na każdym etapie.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Marzena contact card */}
-          <div className="bg-gradient-to-br from-white/[7%] to-white/[2%] border border-white/10 hover:border-[#ec0000]/30 rounded-2xl p-8 md:p-10 transition-all duration-300 group">
-            <div className="flex flex-col md:flex-row items-center gap-6">
-              {/* Avatar */}
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#ec0000] to-[#cc0000] flex items-center justify-center flex-shrink-0 text-white font-bold text-xl shadow-lg shadow-[#ec0000]/20 group-hover:scale-110 transition-transform duration-300">
-                M
-              </div>
-              {/* Details */}
-              <div className="flex-1 text-center md:text-left">
-                <p className="text-xs text-[#ec0000] font-bold uppercase tracking-widest mb-1">Przedstawiciel Santander</p>
-                <h4 className="text-xl font-bold text-white mb-1">Pani Marzena</h4>
-                <p className="text-[#b0b0b0] text-sm">Specjalista ds. finansowania maszyn i urządzeń</p>
-              </div>
-              {/* Phone CTA */}
-              <a
-                href="tel:+48727011317"
-                className="flex items-center gap-3 px-7 py-4 bg-gradient-to-r from-[#ec0000] to-[#cc0000] text-white font-bold rounded-xl hover:shadow-lg hover:shadow-red-600/30 hover:scale-105 transition-all duration-300 flex-shrink-0"
-              >
-                <Phone className="w-5 h-5" />
-                <span>+48 727 011 317</span>
-              </a>
-            </div>
-          </div>
-
-          {/* Bottom CTA buttons */}
+      {/* Bottom CTA buttons */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <div className="max-w-5xl mx-auto text-center">
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/contact"
-              className="px-8 py-3 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white font-bold rounded-lg hover:shadow-lg hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300 inline-flex items-center justify-center gap-2"
+              className="px-8 py-4 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] text-white font-bold rounded-xl hover:shadow-xl hover:shadow-[#1b3caf]/30 hover:-translate-y-1 transition-all duration-300 inline-flex items-center justify-center gap-3 text-lg"
             >
-              Zapytaj o finansowanie
-              <ArrowRight className="w-4 h-4" />
+              Poproś o szczegóły finansowania
+              <ArrowRight className="w-5 h-5" />
             </Link>
             <a
               href="tel:+48787148016"
-              className="px-8 py-3 bg-white/10 text-white font-bold rounded-lg border border-white/20 hover:bg-white/20 hover:scale-105 transition-all duration-300 inline-flex items-center justify-center gap-2"
+              className="px-8 py-4 bg-white/5 text-white font-bold rounded-xl border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 inline-flex items-center justify-center gap-3 text-lg"
             >
-              <Phone className="w-4 h-4" />
+              <Phone className="w-5 h-5" />
               +48 787 148 016
             </a>
           </div>
