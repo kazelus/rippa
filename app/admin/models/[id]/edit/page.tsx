@@ -104,28 +104,6 @@ export default function EditModelPage({
   const [variantImageUploading, setVariantImageUploading] = useState<Record<string, boolean>>({});
   const [variantImageDrag, setVariantImageDrag] = useState<Record<string, boolean>>({});
 
-  // Persist draft to sessionStorage to avoid losing state on remount
-  const storageKey = `admin-model-edit-${modelId}`;
-
-  // Save draft on changes
-  useEffect(() => {
-    if (!modelId || isLoading) return;
-    const draft = {
-      formData,
-      images,
-      heroImageId,
-      sections,
-      downloads,
-      featureValues,
-      parameterValues,
-      variantGroups,
-      activeTab,
-    };
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(draft));
-    } catch (err) {}
-  }, [modelId, isLoading, formData, images, heroImageId, sections, downloads, featureValues, parameterValues, variantGroups, faqs, activeTab]);
-
   // Accessories state (linked model IDs)
   const [linkedAccessoryIds, setLinkedAccessoryIds] = useState<string[]>([]);
   const [allModels, setAllModels] = useState<
@@ -143,17 +121,29 @@ export default function EditModelPage({
     const haystack = `${cat.name ?? ""} ${cat.slug ?? ""}`.toLowerCase();
     return ACCESSORY_KEYWORDS.some((kw) => haystack.includes(kw));
   };
-  const [accessoryFilter, setAccessoryFilter] = useState<"machines" | "accessories" | "all">("machines");
 
-  const [faqs, setFaqs] = useState<{ question: string; answer: string }[]>([]);
+  // Persist draft to sessionStorage to avoid losing state on remount
+  const storageKey = `admin-model-edit-${modelId}`;
 
-  const ACCESSORY_KEYWORDS = ["akcesor", "accessori", "accessory"];
-  const isAccessory = (model: any) => {
-    const cat = model.category;
-    if (!cat) return false;
-    const haystack = `${cat.name ?? ""} ${cat.slug ?? ""}`.toLowerCase();
-    return ACCESSORY_KEYWORDS.some((kw) => haystack.includes(kw));
-  };
+  // Save draft on changes
+  useEffect(() => {
+    if (!modelId || isLoading) return;
+    const draft = {
+      formData,
+      images,
+      heroImageId,
+      sections,
+      downloads,
+      featureValues,
+      parameterValues,
+      variantGroups,
+      faqs,
+      activeTab,
+    };
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(draft));
+    } catch (err) {}
+  }, [modelId, isLoading, formData, images, heroImageId, sections, downloads, featureValues, parameterValues, variantGroups, faqs, activeTab]);
 
   const tabs = [
     { id: 0, name: "Podstawowe" },
@@ -2802,7 +2792,7 @@ export default function EditModelPage({
                 </div>
               )}
 
-              {/* Navigation buttons - always visible */}}
+              {/* Navigation buttons - always visible */}
               <div className="flex gap-4 pt-6 border-t border-[#1b3caf]/30 mt-8">
                 <Button
                   variant="primary"
