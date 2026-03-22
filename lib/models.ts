@@ -81,6 +81,7 @@ export interface ModelWithDetails extends Model {
     fileType: string;
     fileSize?: number;
   }>;
+  faqs?: Array<{ question: string; answer: string }> | null;
 }
 
 export async function getModelsWithDetails(showAll: boolean = false): Promise<ModelWithDetails[]> {
@@ -88,7 +89,7 @@ export async function getModelsWithDetails(showAll: boolean = false): Promise<Mo
   const visibleFilter = showAll ? "" : "WHERE COALESCE(m.visible, true) = true";
   const modelsResult = await pool.query(`
     SELECT m.id, m.name, m.slug, m.description, m."heroDescription", m.power, m.depth, m.weight, m.bucket, m.price, 
-           m.featured, COALESCE(m.visible, true) as visible, m."categoryId", m."heroImageId", m."adminId", m."createdAt", m."updatedAt",
+           m.featured, COALESCE(m.visible, true) as visible, m."categoryId", m."heroImageId", m.faqs, m."adminId", m."createdAt", m."updatedAt",
            c.id as "category_id", c.name as "category_name", c.slug as "category_slug"
     FROM "Model" m
     LEFT JOIN "Category" c ON m."categoryId" = c.id
@@ -172,6 +173,7 @@ export async function getModelsWithDetails(showAll: boolean = false): Promise<Mo
       visible: model.visible,
       categoryId: model.categoryId,
       heroImageId: model.heroImageId,
+      faqs: model.faqs || [],
       category: model.category_id
         ? {
             id: model.category_id,
@@ -245,7 +247,7 @@ export async function getModelById(idOrSlug: string): Promise<ModelWithDetails |
 
   const modelsResult = await pool.query(`
     SELECT m.id, m.name, m.slug, m.description, m."heroDescription", m.power, m.depth, m.weight, m.bucket, m.price, 
-           m.featured, COALESCE(m.visible, true) as visible, m."categoryId", m."heroImageId", m."adminId", m."createdAt", m."updatedAt",
+           m.featured, COALESCE(m.visible, true) as visible, m."categoryId", m."heroImageId", m.faqs, m."adminId", m."createdAt", m."updatedAt",
            c.id as "category_id", c.name as "category_name", c.slug as "category_slug"
     FROM "Model" m
     LEFT JOIN "Category" c ON m."categoryId" = c.id
@@ -411,6 +413,7 @@ export async function getModelById(idOrSlug: string): Promise<ModelWithDetails |
           paramLabel: p.label,
         })),
       variantGroups: variantGroups,
+      faqs: model.faqs || [],
       accessories: accessoriesResult.rows.map((a: any) => ({
         id: a.id,
         name: a.name,

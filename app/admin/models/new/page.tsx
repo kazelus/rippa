@@ -132,9 +132,20 @@ export default function AddModelPage() {
   // Accessories state (linked model IDs)
   const [linkedAccessoryIds, setLinkedAccessoryIds] = useState<string[]>([]);
   const [allModels, setAllModels] = useState<
-    Array<{ id: string; name: string; imageUrl?: string | null }>
+    Array<{ id: string; name: string; imageUrl?: string | null; category?: any }>
   >([]);
   const [accessorySearch, setAccessorySearch] = useState("");
+  const [accessoryFilter, setAccessoryFilter] = useState<"machines" | "accessories" | "all">("machines");
+
+  const [faqs, setFaqs] = useState<{ question: string; answer: string }[]>([]);
+
+  const ACCESSORY_KEYWORDS = ["akcesor", "accessori", "accessory"];
+  const isAccessory = (model: any) => {
+    const cat = model.category;
+    if (!cat) return false;
+    const haystack = `${cat.name ?? ""} ${cat.slug ?? ""}`.toLowerCase();
+    return ACCESSORY_KEYWORDS.some((kw) => haystack.includes(kw));
+  };
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -154,6 +165,7 @@ export default function AddModelPage() {
               id: m.id,
               name: m.name,
               imageUrl: m.images?.[0]?.url || null,
+              category: m.category,
             })),
           );
         })
@@ -414,6 +426,7 @@ export default function AddModelPage() {
             parameterId: k,
             value: parameterValues[k],
           })),
+          faqs,
         }),
       });
       if (!response.ok) {
@@ -499,7 +512,7 @@ export default function AddModelPage() {
       if (draft.featureValues) setFeatureValues(draft.featureValues);
       if (draft.parameterValues) setParameterValues(draft.parameterValues);
       if (draft.variantGroups) setVariantGroups(draft.variantGroups);
-      if (typeof draft.activeTab === "number") setActiveTab(draft.activeTab);
+      if (draft.faqs) setFaqs(draft.faqs);
       if (typeof draft.activeTab === "number") setActiveTab(draft.activeTab);
     } catch (err) {
       // ignore
@@ -519,6 +532,7 @@ export default function AddModelPage() {
       featureValues,
       parameterValues,
       variantGroups,
+      faqs,
       activeTab,
     };
     try {
@@ -537,6 +551,7 @@ export default function AddModelPage() {
     { id: 4, name: "Pliki" },
     { id: 5, name: "Warianty" },
     { id: 6, name: "Akcesoria" },
+    { id: 7, name: "FAQ" },
   ];
 
   const moveSectionUp = (index: number) => {
@@ -2456,15 +2471,24 @@ export default function AddModelPage() {
                     własnymi stronami, zdjęciami i wariantami.
                   </p>
 
-                  {/* Search */}
-                  <div className="mb-6">
+                  {/* Search and Filter */}
+                  <div className="mb-6 flex gap-4">
                     <input
                       type="text"
                       placeholder="Szukaj modelu..."
                       value={accessorySearch}
                       onChange={(e) => setAccessorySearch(e.target.value)}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-[#8b92a9] focus:outline-none focus:ring-2 focus:ring-[#1b3caf]"
+                      className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-[#8b92a9] focus:outline-none focus:ring-2 focus:ring-[#1b3caf]"
                     />
+                    <select
+                      value={accessoryFilter}
+                      onChange={(e) => setAccessoryFilter(e.target.value as "machines" | "accessories" | "all")}
+                      className="px-4 py-3 bg-[#0f1419] border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#1b3caf]"
+                    >
+                      <option value="machines">Główne (bez akcesoriów)</option>
+                      <option value="accessories">Tylko akcesoria</option>
+                      <option value="all">Wszystkie</option>
+                    </select>
                   </div>
 
                   {/* Linked accessories */}
@@ -2505,7 +2529,7 @@ export default function AddModelPage() {
                                   </svg>
                                 </div>
                               )}
-                              <span className="text-white text-sm font-medium flex-1 truncate">
+                              <span className="text-white text-sm font-medium flex-1 break-words text-wrap">
                                 {m.name}
                               </span>
                               <button
@@ -2532,13 +2556,13 @@ export default function AddModelPage() {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto pr-2">
                     {allModels
-                      .filter(
-                        (m) =>
-                          !linkedAccessoryIds.includes(m.id) &&
-                          m.name
-                            .toLowerCase()
-                            .includes(accessorySearch.toLowerCase()),
-                      )
+                      .filter((m) => {
+                        if (linkedAccessoryIds.includes(m.id)) return false;
+                        if (!m.name.toLowerCase().includes(accessorySearch.toLowerCase())) return false;
+                        if (accessoryFilter === "machines" && isAccessory(m)) return false;
+                        if (accessoryFilter === "accessories" && !isAccessory(m)) return false;
+                        return true;
+                      })
                       .map((m) => (
                         <button
                           key={m.id}
@@ -2571,27 +2595,71 @@ export default function AddModelPage() {
                               </svg>
                             </div>
                           )}
-                          <span className="text-[#b0b0b0] text-sm font-medium flex-1 truncate">
-                            {m.name}
-                          </span>
+                          <span className="text-[#b0b0b0] text-sm font-medium flex-1 break-words text-wrap">
+                                {m.name}
+                              </span>
                           <span className="text-[#1b3caf] text-lg flex-shrink-0">
                             +
                           </span>
                         </button>
                       ))}
-                    {allModels.filter(
-                      (m) =>
-                        !linkedAccessoryIds.includes(m.id) &&
-                        m.name
-                          .toLowerCase()
-                          .includes(accessorySearch.toLowerCase()),
-                    ).length === 0 && (
+                    {allModels.filter((m) => {
+                      if (linkedAccessoryIds.includes(m.id)) return false;
+                      if (!m.name.toLowerCase().includes(accessorySearch.toLowerCase())) return false;
+                      if (accessoryFilter === "machines" && isAccessory(m)) return false;
+                      if (accessoryFilter === "accessories" && !isAccessory(m)) return false;
+                      return true;
+                    }).length === 0 && (
                       <p className="text-[#8b92a9] text-sm col-span-full py-4 text-center">
                         {accessorySearch
                           ? "Nie znaleziono modeli pasujących do wyszukiwania"
                           : "Brak dostępnych modeli do dodania"}
                       </p>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 7: FAQ */}
+              {activeTab === 7 && (
+                <div className="p-6 animate-fadeIn">
+                  <h3 className="text-xl font-semibold text-white mb-6">Pytania i Odpowiedzi (FAQ)</h3>
+                  <div className="space-y-4">
+                    {faqs.map((faq, index) => (
+                      <div key={index} className="bg-white/5 border border-white/10 p-4 rounded-lg flex flex-col gap-3">
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-white font-medium">Pytanie #{index + 1}</h4>
+                          <button
+                            type="button"
+                            onClick={() => setFaqs(prev => prev.filter((_, i) => i !== index))}
+                            className="text-red-400 hover:text-red-300 text-sm focus:outline-none"
+                          >
+                            Usuń
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Treść pytania..."
+                          value={faq.question}
+                          onChange={(e) => setFaqs(prev => prev.map((f, i) => i === index ? { ...f, question: e.target.value } : f))}
+                          className="w-full px-4 py-2 bg-[#0f1419] border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#1b3caf]"
+                        />
+                        <textarea
+                          placeholder="Odpowiedź..."
+                          value={faq.answer}
+                          onChange={(e) => setFaqs(prev => prev.map((f, i) => i === index ? { ...f, answer: e.target.value } : f))}
+                          rows={3}
+                          className="w-full px-4 py-2 bg-[#0f1419] border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#1b3caf]"
+                        />
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setFaqs(prev => [...prev, { question: "", answer: "" }])}
+                      className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg hover:bg-white/10 transition focus:outline-none"
+                    >
+                      + Dodaj kolejne pytanie
+                    </button>
                   </div>
                 </div>
               )}

@@ -207,6 +207,7 @@ export async function PUT(
       images = [],
       sections = [],
       downloads = [],
+      faqs = [],
     } = body;
 
     const hasImagesField = Object.prototype.hasOwnProperty.call(body, "images");
@@ -256,8 +257,9 @@ export async function PUT(
         visible = $10,
         "categoryId" = $11,
         "heroImageId" = COALESCE($12, "heroImageId"),
+        "faqs" = $13,
         "updatedAt" = CURRENT_TIMESTAMP
-      WHERE id = $13`,
+      WHERE id = $14`,
       [
         name,
         description,
@@ -272,6 +274,7 @@ export async function PUT(
         categoryId || null,
         // pass null if undefined so COALESCE will keep existing
         typeof heroImageId === "undefined" ? null : heroImageId,
+        JSON.stringify(faqs),
         id,
       ],
     );

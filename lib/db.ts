@@ -89,6 +89,15 @@ export async function initializeDatabase() {
       // Column might already exist
     }
 
+    // Add faqs column if it doesn't exist
+    try {
+      await db.query(`
+        ALTER TABLE "Model" ADD COLUMN IF NOT EXISTS "faqs" JSONB DEFAULT '[]'::jsonb
+      `);
+    } catch (e) {
+      // Column might already exist
+    }
+
     // Create images table
     await db.query(`
       CREATE TABLE IF NOT EXISTS "Image" (

@@ -69,6 +69,7 @@ export function ProductClient({
   const [quoteMessage, setQuoteMessage] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [activeParamTab, setActiveParamTab] = useState(0);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [accessories, setAccessories] = useState<
     Array<{
       id: string;
@@ -110,6 +111,21 @@ export function ProductClient({
   };
 
   const totalPrice = model ? calculateTotalPrice() : 0;
+
+  // Generate FAQ Schema
+  const faqSchema = model?.faqs && model.faqs.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": model.faqs.map((faq: any) => ({
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer
+      }
+    }))
+  } : null;
+
   const hasVariants =
     model && model.variantGroups && model.variantGroups.length > 0;
 
@@ -1530,6 +1546,48 @@ export function ProductClient({
             </div>
           </div>
         </section>
+
+
+        {/* FAQ Section */}
+        {model?.faqs && model.faqs.length > 0 && (
+          <section className="py-24 bg-[#0a0d14] border-t border-white/10 relative">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                  Często zadawane pytania
+                </h2>
+                <div className="w-20 h-1 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] mx-auto" />
+              </div>
+              
+              <div className="space-y-4">
+                {model.faqs.map((faq: { question: string, answer: string }, index: number) => {
+                  const isOpen = openFaqIndex === index;
+                  return (
+                    <div 
+                      key={index}
+                      className={`bg-white/5 border border-white/10 rounded-xl overflow-hidden transition-all duration-300 ${isOpen ? 'border-[#1b3caf]/50 bg-white/10' : 'hover:border-white/20'}`}
+                    >
+                      <button
+                        onClick={() => setOpenFaqIndex(isOpen ? null : index)}
+                        className="w-full px-6 py-5 flex justify-between items-center text-left focus:outline-none"
+                      >
+                        <span className="text-lg font-semibold text-white pr-8">{faq.question}</span>
+                        <ChevronDown className={`w-5 h-5 text-[#8b92a9] transition-transform duration-300 flex-shrink-0 ${isOpen ? 'rotate-180 text-[#1b3caf]' : ''}`} />
+                      </button>
+                      <div 
+                        className={`transition-all duration-300 ease-in-out ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
+                      >
+                        <div className="px-6 pb-5 text-[#b0b0b0] leading-relaxed whitespace-pre-wrap">
+                          {faq.answer}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* CTA Section */}
         <section className="py-20">
