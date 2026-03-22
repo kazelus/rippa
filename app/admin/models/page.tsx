@@ -49,6 +49,13 @@ export default function ModelsPage() {
   >("all");
   const [deleteTarget, setDeleteTarget] = useState<Model | null>(null);
   const [cloning, setCloning] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string>("__no_accessories");
+
+  const ACCESSORY_KEYWORDS = ["akcesor", "accessori", "accessory"];
+  const isAccessory = (m: Model) => {
+    const haystack = `${m.category?.name ?? ""}`.toLowerCase();
+    return ACCESSORY_KEYWORDS.some((kw) => haystack.includes(kw));
+  };
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/admin");
@@ -122,11 +129,19 @@ export default function ModelsPage() {
 
   const filtered = models.filter((m) => {
     const matchSearch = m.name.toLowerCase().includes(search.toLowerCase());
-    if (filter === "visible") return matchSearch && m.visible !== false;
-    if (filter === "hidden") return matchSearch && m.visible === false;
-    if (filter === "featured") return matchSearch && m.featured;
-    return matchSearch;
+    if (!matchSearch) return false;
+    if (filter === "visible" && m.visible === false) return false;
+    if (filter === "hidden" && m.visible !== false) return false;
+    if (filter === "featured" && !m.featured) return false;
+    if (categoryFilter === "__no_accessories" && isAccessory(m)) return false;
+    if (categoryFilter !== "__no_accessories" && categoryFilter !== "__all" && m.category?.name !== categoryFilter) return false;
+    return true;
   });
+
+  // Get unique categories for the dropdown
+  const allCategories = Array.from(
+    new Set(models.map((m) => m.category?.name).filter(Boolean) as string[])
+  ).sort();
 
   const visibleCount = models.filter((m) => m.visible !== false).length;
   const hiddenCount = models.filter((m) => m.visible === false).length;
@@ -191,15 +206,28 @@ export default function ModelsPage() {
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b7280]" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Szukaj modelu..."
-          className="w-full pl-11 pr-4 py-3 bg-white/[5%] border border-white/10 rounded-xl text-white placeholder-[#6b7280] focus:outline-none focus:border-[#1b3caf]/50 transition"
-        />
+      {/* Search + Category filter */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b7280]" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Szukaj modelu..."
+            className="w-full pl-11 pr-4 py-3 bg-white/[5%] border border-white/10 rounded-xl text-white placeholder-[#6b7280] focus:outline-none focus:border-[#1b3caf]/50 transition"
+          />
+        </div>
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="px-4 py-3 bg-white/[5%] border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#1b3caf]/50 transition min-w-[200px]"
+        >
+          <option value="__no_accessories">Bez akcesoriów</option>
+          <option value="__all">Wszystkie kategorie</option>
+          {allCategories.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
       </div>
 
       {/* Error */}
