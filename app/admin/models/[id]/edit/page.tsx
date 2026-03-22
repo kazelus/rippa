@@ -330,7 +330,14 @@ export default function EditModelPage({
   const fetchModel = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/models/${modelId}`);
+      const timestamp = new Date().getTime();
+      const response = await fetch(`/api/models/${modelId}?t=${timestamp}`, {
+        cache: "no-store",
+        headers: {
+          "Pragma": "no-cache",
+          "Cache-Control": "no-cache"
+        }
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch model");
       }

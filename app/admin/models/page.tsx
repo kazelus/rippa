@@ -68,7 +68,14 @@ export default function ModelsPage() {
   const fetchModels = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/models?all=true");
+      const timestamp = new Date().getTime();
+      const response = await fetch(`/api/models?all=true&t=${timestamp}`, {
+        cache: "no-store",
+        headers: {
+          "Pragma": "no-cache",
+          "Cache-Control": "no-cache"
+        }
+      });
       if (!response.ok) throw new Error("Failed to fetch models");
       setModels(await response.json());
     } catch (err: any) {
