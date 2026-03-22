@@ -139,6 +139,7 @@ export default function EditModelPage({
       variantGroups,
       faqs,
       activeTab,
+      _savedAt: new Date().toISOString(),
     };
     try {
       localStorage.setItem(storageKey, JSON.stringify(draft));
@@ -339,7 +340,18 @@ export default function EditModelPage({
       let draft: any = null;
       try {
         const raw = localStorage.getItem(storageKey);
-        if (raw) draft = JSON.parse(raw);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          // Validate draft freshness: if model was updated after draft was saved, discard it
+          const modelUpdatedAt = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
+          const draftSavedAt = parsed._savedAt ? new Date(parsed._savedAt).getTime() : 0;
+          if (draftSavedAt > 0 && modelUpdatedAt > draftSavedAt) {
+            // Model was saved more recently than draft — draft is stale, discard it
+            localStorage.removeItem(storageKey);
+          } else {
+            draft = parsed;
+          }
+        }
       } catch {}
 
       setFormData({
@@ -356,7 +368,6 @@ export default function EditModelPage({
       setHeroImageId(draft?.heroImageId ?? data.heroImageId ?? "");
       setSections(draft?.sections ?? data.sections ?? [{ title: "", text: "" }]);
       setDownloads(draft?.downloads ?? data.downloads ?? []);
-      setFaqs(draft?.faqs ?? data.faqs ?? []);
       setFaqs(draft?.faqs ?? data.faqs ?? []);
       
       // Load feature values from API response (if present) or draft
