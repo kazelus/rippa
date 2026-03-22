@@ -664,7 +664,7 @@ export function ProductClient({
             )}
 
             {/* Description - truncated if too long on mobile */}
-            <p className="text-sm md:text-lg lg:text-xl text-[#d0d8e6] leading-snug lg:leading-relaxed font-light line-clamp-3 md:line-clamp-6 w-full shrink-1">
+            <p className="text-sm md:text-lg lg:text-xl text-[#d0d8e6] leading-snug lg:leading-relaxed font-light line-clamp-3 md:line-clamp-6 w-full shrink-1 whitespace-pre-wrap">
               {model.heroDescription || model.description}
             </p>
 
@@ -1008,7 +1008,7 @@ export function ProductClient({
               <h2 className="text-3xl font-bold text-white mb-8">
                 Opis produktu
               </h2>
-              <p className="text-[#b0b0b0] leading-relaxed text-lg">
+              <p className="text-[#b0b0b0] leading-relaxed text-lg whitespace-pre-wrap">
                 {model.description}
               </p>
             </div>
