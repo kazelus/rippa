@@ -122,30 +122,29 @@ export default function EditModelPage({
     const haystack = `${cat.name ?? ""} ${cat.slug ?? ""}`.toLowerCase();
     return ACCESSORY_KEYWORDS.some((kw) => haystack.includes(kw));
   };
-
+  
   // Persist draft to sessionStorage to avoid losing state on remount
   const storageKey = `admin-model-edit-${modelId}`;
 
-  // Save draft on changes
-  useEffect(() => {
-    if (!modelId || isLoading) return;
-    const draft = {
-      formData,
-      images,
-      heroImageId,
-      sections,
-      downloads,
-      featureValues,
-      parameterValues,
-      variantGroups,
-      faqs,
-      activeTab,
-      _savedAt: new Date().toISOString(),
-    };
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(draft));
-    } catch (err) {}
-  }, [modelId, isLoading, formData, images, heroImageId, sections, downloads, featureValues, parameterValues, variantGroups, faqs, activeTab]);
+  // Disabled: Save draft on changes
+  // useEffect(() => {
+  //   if (!modelId || isLoading) return;
+  //   const draft = {
+  //     formData,
+  //     images,
+  //     heroImageId,
+  //     sections,
+  //     downloads,
+  //     featureValues,
+  //     parameterValues,
+  //     variantGroups,
+  //     faqs,
+  //     linkedAccessoryIds,
+  //     activeTab,
+  //     _savedAt: new Date().toISOString(),
+  //   };
+  //   localStorage.setItem(storageKey, JSON.stringify(draft));
+  // }, [modelId, isLoading, formData, images, heroImageId, sections, downloads, featureValues, parameterValues, variantGroups, faqs, linkedAccessoryIds, activeTab]);
 
   const tabs = [
     { id: 0, name: "Podstawowe" },
@@ -344,50 +343,29 @@ export default function EditModelPage({
       }
       const data = await response.json();
 
-      // Check for saved draft
-      let draft: any = null;
-      try {
-        const raw = localStorage.getItem(storageKey);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          // Validate draft freshness: if model was updated after draft was saved, discard it
-          const modelUpdatedAt = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
-          const draftSavedAt = parsed._savedAt ? new Date(parsed._savedAt).getTime() : 0;
-          if (draftSavedAt > 0 && modelUpdatedAt > draftSavedAt) {
-            // Model was saved more recently than draft — draft is stale, discard it
-            localStorage.removeItem(storageKey);
-          } else {
-            draft = parsed;
-          }
-        }
-      } catch {}
-
       setFormData({
-        name: draft?.formData?.name ?? data.name,
-        description: draft?.formData?.description ?? data.description ?? "",
-        heroDescription: draft?.formData?.heroDescription ?? data.heroDescription ?? "",
-        price: draft?.formData?.price ?? data.price,
-        featured: draft?.formData?.featured ?? data.featured ?? false,
-        visible: draft?.formData?.visible ?? (data.visible !== false),
-        categoryId: draft?.formData?.categoryId ?? data.categoryId ?? "",
-        heroImageId: draft?.formData?.heroImageId ?? data.heroImageId ?? "",
-        availability: draft?.formData?.availability ?? data.availability ?? "Dostępne od ręki",
+        name: data.name ?? "",
+        description: data.description ?? "",
+        heroDescription: data.heroDescription ?? "",
+        price: data.price ?? "",
+        featured: data.featured ?? false,
+        visible: data.visible !== false,
+        categoryId: data.categoryId ?? "",
+        heroImageId: data.heroImageId ?? "",
+        availability: data.availability ?? "Dostępne od ręki",
       });
-      setImages(draft?.images ?? data.images ?? []);
-      setHeroImageId(draft?.heroImageId ?? data.heroImageId ?? "");
-      setSections(draft?.sections ?? data.sections ?? [{ title: "", text: "" }]);
-      setDownloads(draft?.downloads ?? data.downloads ?? []);
-      setFaqs(draft?.faqs ?? data.faqs ?? []);
+      setImages(data.images ?? []);
+      setHeroImageId(data.heroImageId ?? "");
+      setSections(data.sections?.length > 0 ? data.sections : [{ title: "", text: "" }]);
+      setDownloads(data.downloads ?? []);
+      setFaqs(data.faqs ?? []);
       
-      // Load feature values from API response (if present) or draft
+      // Load feature values from API response
       if (data.features && Array.isArray(data.features)) {
-        const vals: Record<string, any> = draft?.featureValues ?? {};
-        // If no draft values, fill from API
-        if (!draft?.featureValues) {
-            data.features.forEach((f: any) => {
-            vals[f.id] = f.value ?? null;
-            });
-        }
+        const vals: Record<string, any> = {};
+        data.features.forEach((f: any) => {
+          vals[f.id] = f.value ?? null;
+        });
         setFeatureValues(vals);
         // set category features definitions too
         const defs = data.features.map((f: any) => ({
@@ -400,14 +378,12 @@ export default function EditModelPage({
         setCategoryFeatures(defs);
       }
       
-      // Load parameter values from API response (if present) or draft
+      // Load parameter values from API response
       if (data.parameters && Array.isArray(data.parameters)) {
-        const vals: Record<string, any> = draft?.parameterValues ?? {};
-        if (!draft?.parameterValues) {
-            data.parameters.forEach((p: any) => {
-            vals[p.id] = p.value ?? null;
-            });
-        }
+        const vals: Record<string, any> = {};
+        data.parameters.forEach((p: any) => {
+          vals[p.id] = p.value ?? null;
+        });
         setParameterValues(vals);
         // set category parameters definitions too
         const defs = data.parameters.map((p: any) => ({
@@ -421,38 +397,27 @@ export default function EditModelPage({
         setCategoryParameters(defs);
       }
 
-      // Load variant groups
+      // Load variant groups (from API)
       try {
-        // If draft has variants, use them ? 
-        // Variants fetching is separate call.
-        // We probably want to prioritize draft if exists.
-        if (draft?.variantGroups) {
-             setVariantGroups(draft.variantGroups);
-        } else {
-            const varRes = await fetch(`/api/admin/models/${modelId}/variants`);
-            if (varRes.ok) {
-            const varData = await varRes.json();
-            setVariantGroups(
-                (varData || []).map((g: any) => ({
-                name: g.name,
-                options: (g.options || []).map((o: any) => ({
-                    name: o.name,
-                    priceModifier: o.priceModifier || 0,
-                    isDefault: o.isDefault || false,
-                    images: o.images || [],
-                    parameterOverrides: o.parameterOverrides || {},
-                    mergeWithBase: o.mergeWithBase || false,
-                })),
-                })),
-            );
-            }
+        const varRes = await fetch(`/api/admin/models/${modelId}/variants`);
+        if (varRes.ok) {
+          const varData = await varRes.json();
+          setVariantGroups(
+            (varData || []).map((g: any) => ({
+              name: g.name,
+              options: (g.options || []).map((o: any) => ({
+                name: o.name,
+                priceModifier: o.priceModifier || 0,
+                isDefault: o.isDefault || false,
+                images: o.images || [],
+                parameterOverrides: o.parameterOverrides || {},
+                mergeWithBase: o.mergeWithBase || false,
+              })),
+            })),
+          );
         }
       } catch (err) {
         console.error("Error fetching variants:", err);
-      }
-      
-      if (typeof draft?.activeTab === "number") {
-          setActiveTab(draft.activeTab);
       }
 
       // Load linked accessories
