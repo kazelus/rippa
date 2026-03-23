@@ -38,6 +38,7 @@ export default function EditModelPage({
     visible: true,
     categoryId: "",
     heroImageId: "",
+    availability: "Dostępne od ręki",
   });
   const [categories, setCategories] = useState<
     Array<{ id: string; name: string }>
@@ -370,6 +371,7 @@ export default function EditModelPage({
         visible: draft?.formData?.visible ?? (data.visible !== false),
         categoryId: draft?.formData?.categoryId ?? data.categoryId ?? "",
         heroImageId: draft?.formData?.heroImageId ?? data.heroImageId ?? "",
+        availability: draft?.formData?.availability ?? data.availability ?? "Dostępne od ręki",
       });
       setImages(draft?.images ?? data.images ?? []);
       setHeroImageId(draft?.heroImageId ?? data.heroImageId ?? "");
@@ -1020,6 +1022,23 @@ export default function EditModelPage({
                         <span className="text-lg">⭐</span>
                         Oznacz jako wyróżniony (bestseller)
                       </label>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium text-[#b0b0b0]">
+                        Status dostępności
+                      </label>
+                      <select
+                        name="availability"
+                        value={formData.availability}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 rounded-lg bg-[#151a24] border border-[#1b3caf]/30 text-white focus:outline-none focus:border-[#1b3caf] transition-colors"
+                      >
+                        <option value="Dostępne od ręki">Dostępne od ręki</option>
+                        <option value="Na zamówienie">Na zamówienie</option>
+                        <option value="Brak w magazynie">Brak w magazynie</option>
+                        <option value="Wkrótce dostępne">Wkrótce dostępne</option>
+                      </select>
                     </div>
 
                     <div className="flex items-center gap-3 p-4 bg-[#242d3d] rounded-lg border border-[#1b3caf]/20">

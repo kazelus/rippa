@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -52,15 +52,33 @@ function pickVariantUrl(img: { variants?: string[] | null; url: string } | null 
 // Interface Model removed, using ModelWithDetails
 
 function AccessoriesCarousel({ accessories }: { accessories: any[] }) {
-  const [emblaRef] = useEmblaCarousel({ align: "start", dragFree: true });
+  const [emblaRef, emblaApi] = useEmblaCarousel({ align: "start", dragFree: true, containScroll: "trimSnaps" });
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
+
+  const scrollPrev = useCallback(() => emblaApi && emblaApi.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi]);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setCanScrollPrev(emblaApi.canScrollPrev());
+    setCanScrollNext(emblaApi.canScrollNext());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onSelect);
+  }, [emblaApi, onSelect]);
 
   const formatPrice = (price: number) => {
     return Math.round(Number(price)).toLocaleString("pl-PL", { useGrouping: true }).replace(/,/g, "\u00a0");
   };
 
   return (
-    <section className="py-24 border-t border-white/10 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-24 border-t border-white/10 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent relative group">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative">
         <h2 className="text-4xl font-bold text-white mb-4 text-center">
           Polecane produkty
         </h2>
@@ -68,8 +86,33 @@ function AccessoriesCarousel({ accessories }: { accessories: any[] }) {
           Sprawdź kompatybilne narzędzia i akcesoria operacyjne
         </p>
 
+        {/* Carousel buttons */}
+        <div className="absolute top-1/2 -translate-y-1/2 left-0 sm:left-2 lg:left-4 z-20 transition-opacity duration-300 opacity-0 group-hover:opacity-100 hidden sm:block">
+            <button
+              onClick={scrollPrev}
+              disabled={!canScrollPrev}
+              className={`p-3 rounded-full bg-[#151a24]/80 backdrop-blur-sm border border-white/10 text-white shadow-xl transition-all ${
+                !canScrollPrev ? "opacity-30 cursor-not-allowed" : "hover:bg-[#1b3caf] hover:scale-110"
+              }`}
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+        </div>
+
+        <div className="absolute top-1/2 -translate-y-1/2 right-0 sm:right-2 lg:right-4 z-20 transition-opacity duration-300 opacity-0 group-hover:opacity-100 hidden sm:block">
+            <button
+              onClick={scrollNext}
+              disabled={!canScrollNext}
+              className={`p-3 rounded-full bg-[#151a24]/80 backdrop-blur-sm border border-white/10 text-white shadow-xl transition-all ${
+                !canScrollNext ? "opacity-30 cursor-not-allowed" : "hover:bg-[#1b3caf] hover:scale-110"
+              }`}
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+        </div>
+
         <div className="overflow-hidden p-2" ref={emblaRef}>
-          <div className="flex gap-6 pb-8">
+          <div className="flex gap-6 pb-8 items-stretch justify-center sm:justify-start">
             {accessories.map((acc: any) => (
               <div 
                 key={acc.id}
@@ -674,10 +717,18 @@ export function ProductClient({
               <p className="text-[10px] md:text-sm uppercase tracking-widest text-[#b0b0b0] mb-0.5 md:mb-2">
                 {hasVariants ? "Twoja konfiguracja" : "Cena startowa"}
               </p>
-              <p className="text-2xl sm:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] leading-none mb-1 md:mb-2">
+              <p className="text-2xl sm:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] leading-none mb-1 md:mb-2 flex items-center gap-3">
                 {hasVariants ? "" : "Od "}
                 {formatPrice(totalPrice)} PLN
               </p>
+
+              {/* Dostępność urządzenia w sklepie */}
+              <div className="w-fit">
+                <p className="text-sm font-semibold text-green-400 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20 mb-3 shadow-md">
+                   {model.availability || "Dostępne od ręki"}
+                </p>
+              </div>
+
               <div className="h-4 md:h-6">
                 {hasVariants && totalPrice !== Number(model.price) && (
                   <p className="text-xs md:text-sm text-[#8b92a9] line-through animate-in fade-in slide-in-from-top-1">

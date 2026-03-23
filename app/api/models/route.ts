@@ -84,6 +84,7 @@ export async function POST(req: NextRequest) {
       sections = [],
       downloads = [],
       faqs = [],
+      availability = "Dostępne od ręki",
     } = body;
 
     if (!name || !price) {
@@ -106,9 +107,9 @@ export async function POST(req: NextRequest) {
 
     // Insert model with category and heroImageId
     const modelResult = await pool.query(
-      `INSERT INTO "Model" (id, name, slug, description, "heroDescription", power, depth, weight, bucket, price, featured, visible, "categoryId", "heroImageId", "faqs", "adminId", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
-       RETURNING id, name, slug, description, "heroDescription", power, depth, weight, bucket, price, featured, visible, "categoryId", "heroImageId", "faqs", "adminId", "createdAt", "updatedAt"`,
+      `INSERT INTO "Model" (id, name, slug, description, "heroDescription", power, depth, weight, bucket, price, featured, visible, "categoryId", "heroImageId", "faqs", "availability", "adminId", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW())
+       RETURNING id, name, slug, description, "heroDescription", power, depth, weight, bucket, price, featured, visible, "categoryId", "heroImageId", "faqs", "availability", "adminId", "createdAt", "updatedAt"`,
       [
         name,
         uniqueSlug,
@@ -124,6 +125,7 @@ export async function POST(req: NextRequest) {
         categoryId || null,
         heroImageId || null,
         JSON.stringify(faqs),
+        availability,
         session.user.id,
       ],
     );

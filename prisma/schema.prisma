@@ -96,6 +96,7 @@ model Model {
   heroImageId        String?
   heroDescription    String?
   categoryId         String?               @db.VarChar(255)
+  availability       String                @default("Dostępne od ręki")
   contactSubmissions ContactSubmission[]
   downloads          Download[]
   images             Image[]

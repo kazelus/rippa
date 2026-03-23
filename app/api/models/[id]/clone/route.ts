@@ -29,8 +29,8 @@ export async function POST(
 
     // 2. Create cloned model (hidden by default, with "(kopia)" suffix)
     const clonedModel = await pool.query(
-      `INSERT INTO "Model" (id, name, description, "heroDescription", power, depth, weight, bucket, price, featured, visible, "categoryId", "heroImageId", "adminId", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, false, false, $9, NULL, $10, NOW(), NOW())
+      `INSERT INTO "Model" (id, name, description, "heroDescription", power, depth, weight, bucket, price, featured, visible, "categoryId", "heroImageId", faqs, availability, "adminId", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, false, false, $9, NULL, $10, $11, $12, NOW(), NOW())
        RETURNING *`,
       [
         original.name + " (kopia)",
@@ -42,6 +42,8 @@ export async function POST(
         original.bucket || "",
         original.price || "0",
         original.categoryId || null,
+        typeof original.faqs === "string" ? original.faqs : JSON.stringify(original.faqs || []),
+        original.availability || "Dostępne od ręki",
         session.user.id,
       ],
     );
