@@ -112,7 +112,14 @@ function AccessoriesCarousel({ accessories }: { accessories: any[] }) {
         </div>
 
         <div className="overflow-hidden p-2" ref={emblaRef}>
-          <div className="flex gap-6 pb-8 items-stretch justify-center sm:justify-start">
+          <div className={`flex gap-6 pb-8 items-stretch ${
+            accessories.length <= 1 ? "justify-center" :
+            accessories.length === 2 ? "sm:justify-center justify-start" :
+            accessories.length === 3 ? "lg:justify-center justify-start" :
+            accessories.length === 4 ? "xl:justify-center justify-start" :
+            accessories.length === 5 ? "2xl:justify-center justify-start" :
+            "justify-start"
+          }`}>
             {accessories.map((acc: any) => (
               <div 
                 key={acc.id}
