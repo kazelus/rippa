@@ -77,7 +77,7 @@ function AccessoriesCarousel({ accessories }: { accessories: any[] }) {
   };
 
   return (
-    <section className="py-24 border-t border-white/10 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent relative group">
+    <section className="py-24 border-t border-white/10 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent relative group/carousel">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative">
         <h2 className="text-4xl font-bold text-white mb-4 text-center">
           Polecane produkty
@@ -87,7 +87,7 @@ function AccessoriesCarousel({ accessories }: { accessories: any[] }) {
         </p>
 
         {/* Carousel buttons */}
-        <div className="absolute top-1/2 -translate-y-1/2 left-0 sm:left-2 lg:left-4 z-20 transition-opacity duration-300 opacity-0 group-hover:opacity-100 hidden sm:block">
+        <div className="absolute top-1/2 -translate-y-1/2 left-0 sm:left-2 lg:left-4 z-20 transition-opacity duration-300 opacity-0 group-hover/carousel:opacity-100 hidden sm:block">
             <button
               onClick={scrollPrev}
               disabled={!canScrollPrev}
@@ -99,7 +99,7 @@ function AccessoriesCarousel({ accessories }: { accessories: any[] }) {
             </button>
         </div>
 
-        <div className="absolute top-1/2 -translate-y-1/2 right-0 sm:right-2 lg:right-4 z-20 transition-opacity duration-300 opacity-0 group-hover:opacity-100 hidden sm:block">
+        <div className="absolute top-1/2 -translate-y-1/2 right-0 sm:right-2 lg:right-4 z-20 transition-opacity duration-300 opacity-0 group-hover/carousel:opacity-100 hidden sm:block">
             <button
               onClick={scrollNext}
               disabled={!canScrollNext}
