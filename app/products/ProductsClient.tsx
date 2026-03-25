@@ -35,6 +35,7 @@ interface Model {
   featured: boolean;
   categoryId?: string;
   category?: Category;
+  availability?: string;
   images: Array<{ id: string; url: string; alt: string }>;
   quickSpecs?: Array<{
     label: string;
@@ -323,6 +324,11 @@ export function ProductsClient({ initialModels = [], initialCategories = [] }: P
 
               {/* Content */}
               <div className="p-6 flex flex-col flex-1 relative z-10">
+                <div className="mb-4 pb-4 border-b border-white/10">
+                  <span className="inline-block px-3 py-1 bg-green-500/20 text-green-300 text-xs font-bold rounded-full border border-green-500/30">
+                    {model.availability || "Dostępne od ręki"}
+                  </span>
+                </div>
                 <h3 className="text-xl font-bold text-white mb-2 group-hover:text-[#0f9fdf] transition-colors duration-300">
                   {model.name}
                 </h3>

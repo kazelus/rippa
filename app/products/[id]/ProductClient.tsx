@@ -730,10 +730,10 @@ export function ProductClient({
               </p>
 
               {/* Dostępność urządzenia w sklepie */}
-              <div className="w-fit">
-                <p className="text-sm font-semibold text-green-400 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20 mb-3 shadow-md">
+              <div className="mb-6 pb-6 border-b border-white/10">
+                <span className="inline-block px-3 py-1 bg-green-500/20 text-green-300 text-xs font-bold rounded-full border border-green-500/30">
                    {model.availability || "Dostępne od ręki"}
-                </p>
+                </span>
               </div>
 
               <div className="h-4 md:h-6">
