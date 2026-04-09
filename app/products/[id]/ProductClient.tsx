@@ -671,7 +671,7 @@ export function ProductClient({
           transform: `translateY(${scrollY * 0.4}px) scale(${1 - scrollY * 0.0003})`,
         }}
       >
-        <div className="relative w-full h-full pb-16 pt-2 px-4 sm:px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-16">
+        <div className="relative w-full h-full pb-16 pt-2 px-4 sm:px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-8 xl:gap-12">
           {/* Hero Image - Full responsive */}
           {heroImageUrl && (
             <div className="w-full lg:w-1/2 flex items-center justify-center flex-1 max-h-[40vh] lg:max-h-none min-h-0">
@@ -710,10 +710,10 @@ export function ProductClient({
           )}
 
           {/* Content - Compact text adjustments */}
-          <div className="w-full lg:w-1/2 flex flex-col justify-center gap-3 md:gap-6 lg:gap-8 flex-1 min-h-0">
+          <div className="w-full lg:w-1/2 flex flex-col justify-center gap-3 lg:gap-6 flex-1 min-h-0">
             {/* Main Title */}
             <div>
-              <h1 className="text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] via-white to-[#0f9fdf] tracking-tight leading-tight mb-2">
+              <h1 className="text-2xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] via-white to-[#0f9fdf] tracking-tight leading-tight mb-2 break-words">
                 {model.name}
               </h1>
               <div className="h-1 w-16 md:w-24 bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] rounded-full" />
@@ -721,10 +721,10 @@ export function ProductClient({
 
             {/* Price section - compact */}
             <div className="flex flex-col justify-center shrink-0">
-              <p className="text-[10px] md:text-sm uppercase tracking-widest text-[#b0b0b0] mb-0.5 md:mb-2">
+              <p className="text-[10px] md:text-sm uppercase tracking-widest text-[#b0b0b0] mb-0.5 md:mb-1">
                 {hasVariants ? "Twoja konfiguracja" : "Cena startowa"}
               </p>
-              <p className="text-2xl sm:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] leading-none mb-1 md:mb-2 flex items-center gap-3">
+              <p className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#1b3caf] to-[#0f9fdf] leading-none mb-1 flex items-center gap-3">
                 {hasVariants ? "" : "Od "}
                 {formatPrice(totalPrice)} PLN
               </p>
@@ -804,7 +804,7 @@ export function ProductClient({
             )}
 
             {/* Description - truncated if too long on mobile */}
-            <p className="text-sm md:text-lg lg:text-xl text-[#d0d8e6] leading-snug lg:leading-relaxed font-light line-clamp-3 md:line-clamp-6 w-full shrink-1 whitespace-pre-wrap">
+            <p className="text-sm md:text-base lg:text-lg text-[#d0d8e6] leading-snug lg:leading-relaxed font-light line-clamp-3 md:line-clamp-5 xl:line-clamp-6 w-full shrink-1 whitespace-pre-wrap">
               {model.heroDescription || model.description}
             </p>
 
@@ -822,11 +822,11 @@ export function ProductClient({
                 >
                   {quickSpecs.map((qs, i) => (
                     <div key={i}>
-                      <p className="text-[10px] lg:text-xs uppercase tracking-wide text-[#8b92a9] mb-0.5">
+                      <p className="text-[10px] xl:text-xs uppercase tracking-wide text-[#8b92a9] mb-0.5">
                         {qs.label}
                       </p>
                       <p
-                        className={`text-sm lg:text-lg font-bold ${qs.hasOverride ? "text-[#0f9fdf]" : "text-white"} leading-tight`}
+                        className={`text-sm xl:text-lg font-bold ${qs.hasOverride ? "text-[#0f9fdf]" : "text-white"} leading-tight`}
                       >
                         {qs.value}
                         {qs.unit ? ` ${qs.unit}` : ""}
